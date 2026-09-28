@@ -1,0 +1,63 @@
+name: Supabase Respaldo Semanal (pg_dump + Storage Opcional)
+
+on:
+  schedule:
+    # Se ejecuta todos los domingos a las 02:00 UTC
+    - cron: '0 2 * * 0'
+  workflow_dispatch:
+    inputs:
+      backup_storage:
+        description: '¿Respaldar también los archivos del bucket de Storage? (true/false)'
+        required: false
+        default: 'false'
+
+jobs:
+  backup-database:
+    name: Respaldo PostgreSQL (pg_dump)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar cliente PostgreSQL
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Ejecutar pg_dump y comprimir
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          if [ -z "$DB_URL" ]; then
+            echo "::error::Falta el secret SUPABASE_DB_URL (Cadena de conexión directa de Postgres en Supabase)."
+            exit 1
+          fi
+
+          TIMESTAMP=$(date +'%Y%m%d_%H%M%S')
+          BACKUP_FILE="atlantica_db_backup_${TIMESTAMP}.sql.gz"
+          mkdir -p backups
+
+          echo "Iniciando pg_dump..."
+          pg_dump "$DB_URL" --no-owner --no-acl --clean --if-exists | gzip > "backups/${BACKUP_FILE}"
+
+          echo "✅ Respaldo de BD generado exitosamente: ${BACKUP_FILE}"
+          ls -lh backups/
+
+      - name: Respaldo opcional de archivos de Storage
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.backup_storage == 'true' }}
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_STORAGE_BUCKET: case-documents
+        run: |
+          echo "Iniciando respaldo de documentos del bucket de Supabase..."
+          npm install @supabase/supabase-js
+          node scripts/backup-storage.mjs
+          tar -czf backups/storage_files_backup.tar.gz backups/storage
+
+      - name: Subir artefacto con retención de 30 días
+        uses: actions/upload-artifact@v4
+        with:
+          name: atlantica-backup-${{ github.run_id }}
+          path: backups/
+          retention-days: 30

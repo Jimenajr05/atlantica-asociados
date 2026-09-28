@@ -20,6 +20,8 @@ pids
 node_modules/
 
 # Production build output
+.next/
+out/
 dist/
 dist-ssr/
 *.local

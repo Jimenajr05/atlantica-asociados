@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* ==========================================================================
+     PALETA DE COLORES - ATLÁNTICA & ASOCIADOS (Cercana, Humana y Profesional)
+     ========================================================================== */
+  --color-azul-rey: #163664;       /* Azul rey institucional, claro y confiable */
+  --color-azul-rey-dark: #0f2444;  /* Azul rey profundo para hover de botones */
+  --color-blanco: #ffffff;         /* Blanco puro base */
+  --color-negro: #0b0f19;          /* Negro exclusivo para el encabezado (Navbar) y texto */
+  --color-dorado: #c5a059;         /* Dorado suave y sobrio para acentos discretos */
+  --color-dorado-hover: #b08c46;   /* Dorado para interacciones */
+  color-scheme: light;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    color-scheme: light;
+  }
+
+  body {
+    background-color: #ffffff;
+    color: #1e293b;
+    font-family: var(--font-sans, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Foco visible y accesible */
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    outline: 2px solid var(--color-azul-rey);
+    outline-offset: 2px;
+  }
+}
+
+/* Tipografía limpia y accesible sin adornos pesados */
+.font-heading {
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+/* Tarjetas claras y limpias con sombras suaves */
+.card-clean {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  border-radius: 0.75rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.card-clean:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 6px 16px rgba(22, 54, 100, 0.08);
+}

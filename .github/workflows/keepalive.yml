@@ -1,0 +1,52 @@
+name: Supabase Keep-Alive (Prevenir Pausa por Inactividad)
+
+on:
+  schedule:
+    # Se ejecuta cada 3 días a las 12:00 UTC
+    - cron: '0 12 */3 * *'
+  workflow_dispatch: # Permite ejecución manual desde GitHub Actions
+
+jobs:
+  ping-supabase:
+    name: Consulta liviana a Supabase REST
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping al endpoint de Supabase con reintentos
+        run: |
+          echo "Iniciando ping de actividad al proyecto Supabase..."
+          
+          SUPABASE_URL="${{ secrets.SUPABASE_URL }}"
+          SUPABASE_ANON_KEY="${{ secrets.SUPABASE_ANON_KEY }}"
+          
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "::error::Faltan secrets SUPABASE_URL o SUPABASE_ANON_KEY en el repositorio."
+            exit 1
+          fi
+
+          # Endpoint REST liviano consultando 1 registro de posts
+          TARGET_URL="${SUPABASE_URL}/rest/v1/posts?select=id&limit=1"
+          
+          # Realizar petición con hasta 3 reintentos
+          SUCCESS=0
+          for i in 1 2 3; do
+            echo "Intento $i de 3..."
+            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X GET "$TARGET_URL" \
+              -H "apikey: $SUPABASE_ANON_KEY" \
+              -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+              --max-time 15)
+              
+            echo "Respuesta HTTP: $HTTP_STATUS"
+            if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 400 ]; then
+              echo "✅ Ping exitoso. El proyecto de Supabase se mantiene activo."
+              SUCCESS=1
+              break
+            else
+              echo "⚠️ Falló el intento $i (HTTP $HTTP_STATUS). Esperando 10 segundos antes del reintento..."
+              sleep 10
+            fi
+          done
+
+          if [ "$SUCCESS" -ne 1 ]; then
+            echo "::warning::No se pudo confirmar la respuesta exitosa tras 3 intentos. Revise si el proyecto ya fue pausado."
+            exit 1
+          fi
