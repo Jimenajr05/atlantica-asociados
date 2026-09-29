@@ -122,7 +122,7 @@ export default function ContactoPage() {
                 ¿Desea solicitar una cita de orientación?
               </strong>
               <p className="leading-relaxed">
-                Marque la casilla dentro del formulario indicando su día y franja horaria preferida (lunes a viernes de 7:00 a.m. a 5:00 p.m.).
+                Marque la casilla del formulario, elija un día en el calendario y seleccione una hora disponible. Las citas duran una hora y se atienden de lunes a viernes entre 7:00 a.m. y 5:00 p.m.
               </p>
             </div>
           </div>

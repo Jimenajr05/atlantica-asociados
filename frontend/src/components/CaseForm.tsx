@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useId } from 'react';
+import React, { useEffect, useState, useId } from 'react';
 import Link from 'next/link';
 import {
   Send,
@@ -11,6 +11,9 @@ import {
   CheckCircle,
   Calendar,
   Clock,
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
   MessageCircle,
   ShieldCheck,
   Loader2
@@ -22,9 +25,61 @@ import {
   MAX_FILES_COUNT,
   validateClientFile,
 } from '@/lib/validations/case';
+import { AppointmentDayAvailability, TimeSlot } from '@/types';
 
 interface CaseFormProps {
   preselectedServiceId?: string;
+}
+
+function getMinDateString() {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Costa_Rica',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date());
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  const date = new Date(`${values.year}-${values.month}-${values.day}T00:00:00.000Z`);
+  date.setUTCDate(date.getUTCDate() + 1);
+  return date.toISOString().slice(0, 10);
+}
+
+function formatAppointmentDate(date: string) {
+  return new Date(`${date}T12:00:00`).toLocaleDateString('es-CR', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  });
+}
+
+function getCalendarDates(month: string) {
+  const [year, monthNumber] = month.split('-').map(Number);
+  const first = new Date(Date.UTC(year, monthNumber - 1, 1));
+  const mondayOffset = (first.getUTCDay() + 6) % 7;
+  first.setUTCDate(first.getUTCDate() - mondayOffset);
+  return Array.from({ length: 42 }, (_, index) => {
+    const date = new Date(first);
+    date.setUTCDate(first.getUTCDate() + index);
+    return date.toISOString().slice(0, 10);
+  }).filter((date) => {
+    const weekday = new Date(`${date}T00:00:00.000Z`).getUTCDay();
+    return weekday !== 0 && weekday !== 6;
+  });
+}
+
+function formatAppointmentTime(timeSlot: TimeSlot) {
+  const [hour, minute] = timeSlot.split(':').map(Number);
+  return `${hour % 12 || 12}:${String(minute).padStart(2, '0')} ${hour < 12 ? 'a.m.' : 'p.m.'}`;
+}
+
+async function fetchAppointmentAvailability(from: string, signal?: AbortSignal) {
+  const response = await fetch(
+    `/api/appointments/availability?from=${encodeURIComponent(from)}&days=42`,
+    { signal }
+  );
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.error || 'No se pudo consultar la disponibilidad.');
+  return result.dates as AppointmentDayAvailability[];
 }
 
 export function CaseForm({ preselectedServiceId }: CaseFormProps) {
@@ -41,7 +96,11 @@ export function CaseForm({ preselectedServiceId }: CaseFormProps) {
   // Solicitud condicional de cita
   const [appointmentRequested, setAppointmentRequested] = useState(false);
   const [preferredDate, setPreferredDate] = useState('');
-  const [preferredTimeSlot, setPreferredTimeSlot] = useState<'manana' | 'tarde' | ''>('');
+  const [preferredTimeSlot, setPreferredTimeSlot] = useState<TimeSlot | ''>('');
+  const [appointmentCalendarMonth, setAppointmentCalendarMonth] = useState(() => getMinDateString().slice(0, 7));
+  const [appointmentAvailability, setAppointmentAvailability] = useState<AppointmentDayAvailability[]>([]);
+  const [loadingAvailability, setLoadingAvailability] = useState(false);
+  const [availabilityError, setAvailabilityError] = useState<string | null>(null);
 
   // Honeypot anti-spam (oculto)
   const [honeypot, setHoneypot] = useState('');
@@ -59,11 +118,32 @@ export function CaseForm({ preselectedServiceId }: CaseFormProps) {
     appointmentRequested: boolean;
   } | null>(null);
 
-  // Calcular la fecha mínima para el selector (mañana hábil)
-  const getMinDateString = () => {
-    const d = new Date();
-    d.setDate(d.getDate() + 1);
-    return d.toISOString().split('T')[0];
+  useEffect(() => {
+    if (!appointmentRequested) return;
+
+    const controller = new AbortController();
+    setLoadingAvailability(true);
+    setAvailabilityError(null);
+    fetchAppointmentAvailability(getCalendarDates(appointmentCalendarMonth)[0], controller.signal)
+      .then((dates) => setAppointmentAvailability(dates))
+      .catch((error: Error) => {
+        if (!controller.signal.aborted) {
+          setAvailabilityError(error.message || 'No se pudo consultar la disponibilidad.');
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoadingAvailability(false);
+      });
+
+    return () => controller.abort();
+  }, [appointmentRequested, appointmentCalendarMonth]);
+
+  const changeAppointmentMonth = (offset: number) => {
+    const monthDate = new Date(`${appointmentCalendarMonth}-01T12:00:00`);
+    monthDate.setMonth(monthDate.getMonth() + offset);
+    setAppointmentCalendarMonth(`${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, '0')}`);
+    setPreferredDate('');
+    setPreferredTimeSlot('');
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -130,7 +210,12 @@ export function CaseForm({ preselectedServiceId }: CaseFormProps) {
         return;
       }
       if (!preferredTimeSlot) {
-        setServerError('Por favor seleccione si prefiere la mañana o la tarde para su cita.');
+        setServerError('Por favor seleccione una hora disponible para su cita.');
+        return;
+      }
+      const selectedDay = appointmentAvailability.find((day) => day.date === preferredDate);
+      if (!selectedDay?.slots[preferredTimeSlot].available) {
+        setServerError('Esa franja ya no está disponible. Actualice las fechas y seleccione otra opción.');
         return;
       }
     }
@@ -163,6 +248,15 @@ export function CaseForm({ preselectedServiceId }: CaseFormProps) {
       const result = await response.json();
 
       if (!response.ok) {
+        if (response.status === 409 && appointmentRequested) {
+          setPreferredDate('');
+          setPreferredTimeSlot('');
+          setLoadingAvailability(true);
+          fetchAppointmentAvailability(getCalendarDates(appointmentCalendarMonth)[0])
+            .then((dates) => setAppointmentAvailability(dates))
+            .catch((error: Error) => setAvailabilityError(error.message))
+            .finally(() => setLoadingAvailability(false));
+        }
         throw new Error(result.error || 'Ocurrió un error al procesar el caso.');
       }
 
@@ -188,6 +282,18 @@ export function CaseForm({ preselectedServiceId }: CaseFormProps) {
       setSubmitting(false);
     }
   };
+
+  const availableAppointmentDates = appointmentAvailability.filter((day) =>
+    Object.values(day.slots).some((slot) => slot.available)
+  );
+  const selectedAppointmentDay = availableAppointmentDates.find((day) => day.date === preferredDate);
+  const calendarDates = getCalendarDates(appointmentCalendarMonth);
+  const minimumBookableDate = getMinDateString();
+  const minimumMonth = minimumBookableDate.slice(0, 7);
+  const calendarMonthLabel = new Date(`${appointmentCalendarMonth}-01T12:00:00`).toLocaleDateString('es-CR', {
+    month: 'long',
+    year: 'numeric',
+  });
 
   // Si ya se envió exitosamente, mostrar mensaje de confirmación claro y botón directo a WhatsApp
   if (successData) {
@@ -227,7 +333,7 @@ export function CaseForm({ preselectedServiceId }: CaseFormProps) {
 
         {successData.appointmentRequested && (
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 max-w-md mx-auto text-xs text-amber-800">
-            ℹ️ <strong>Cita solicitada:</strong> Nos pondremos en contacto vía WhatsApp para confirmar la hora exacta dentro de la franja horaria indicada.
+            ℹ️ <strong>Cita solicitada:</strong> Nos pondremos en contacto vía WhatsApp para confirmar la hora solicitada.
           </div>
         )}
 
@@ -258,7 +364,7 @@ export function CaseForm({ preselectedServiceId }: CaseFormProps) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="bg-white rounded-2xl border border-slate-200/90 shadow-card p-6 sm:p-9 space-y-6"
+      className="space-y-5 rounded-xl border border-slate-200/90 bg-white p-4 shadow-card sm:space-y-6 sm:rounded-2xl sm:p-9"
       noValidate
     >
       <div className="border-b border-slate-100 pb-4">
@@ -440,7 +546,7 @@ export function CaseForm({ preselectedServiceId }: CaseFormProps) {
       </div>
 
       {/* SECCIÓN CONDICIONAL: Solicitar Cita */}
-      <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 space-y-3">
+      <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/70 p-3 sm:p-4">
         <label className="flex items-start gap-3 cursor-pointer select-none">
           <input
             type="checkbox"
@@ -453,46 +559,148 @@ export function CaseForm({ preselectedServiceId }: CaseFormProps) {
               Deseo solicitar una cita de orientación previa
             </span>
             <span className="text-xs text-slate-500 block mt-0.5">
-              Si necesita hablar directamente con nosotros, seleccione su día y franja horaria preferida. La confirmación se realizará luego por WhatsApp.
+              Si necesita hablar directamente con nosotros, elija en el calendario un día y una hora disponible. Cada cita dura una hora y la confirmación se realizará luego por WhatsApp.
             </span>
           </div>
         </label>
 
         {appointmentRequested && (
-          <div className="pt-3 border-t border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-4 animate-fadeIn">
-            {/* Día Preferido */}
+          <div className="pt-3 border-t border-slate-200 space-y-4 animate-fadeIn">
             <div>
-              <label htmlFor={`${formId}-preferred-date`} className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-dorado" /> Día preferido (Lunes a Viernes)
-              </label>
-              <input
-                type="date"
-                id={`${formId}-preferred-date`}
-                required={appointmentRequested}
-                min={getMinDateString()}
-                value={preferredDate}
-                onChange={(e) => setPreferredDate(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:border-azul-rey focus:ring-1 focus:ring-azul-rey bg-white"
-              />
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+                  <Calendar className="h-3.5 w-3.5 text-dorado" /> Seleccione una fecha disponible
+                </label>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => changeAppointmentMonth(-1)}
+                    disabled={appointmentCalendarMonth <= minimumMonth}
+                    aria-label="Mes anterior"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-300 text-slate-600 hover:bg-white disabled:opacity-40"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                  <span className="min-w-28 text-center text-xs font-semibold capitalize text-slate-700">{calendarMonthLabel}</span>
+                  <button
+                    type="button"
+                    onClick={() => changeAppointmentMonth(1)}
+                    aria-label="Mes siguiente"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-300 text-slate-600 hover:bg-white"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+                <div className="grid grid-cols-5 border-b border-slate-200 bg-slate-100/70">
+                  {['Lun', 'Mar', 'Mié', 'Jue', 'Vie'].map((weekday) => (
+                    <span key={weekday} className="py-2 text-center text-[10px] font-bold uppercase text-slate-500">
+                      {weekday}
+                    </span>
+                  ))}
+                </div>
+                <div className="grid grid-cols-5 gap-px bg-slate-200">
+                  {calendarDates.map((date) => {
+                    const day = appointmentAvailability.find((item) => item.date === date);
+                    const inMonth = date.startsWith(appointmentCalendarMonth);
+                    const availableCount = day
+                      ? Object.values(day.slots).filter((slot) => slot.available).length
+                      : 0;
+                    const selectable = date >= minimumBookableDate && availableCount > 0;
+                    const selected = preferredDate === date;
+                    return (
+                      <button
+                        key={date}
+                        type="button"
+                        disabled={!inMonth || !selectable || loadingAvailability}
+                        aria-pressed={selected}
+                        aria-label={`${formatAppointmentDate(date)}${selectable ? `, ${availableCount} horas disponibles` : ', sin disponibilidad'}`}
+                        onClick={() => {
+                          setPreferredDate(date);
+                          setPreferredTimeSlot('');
+                        }}
+                        className={`flex min-h-11 flex-col items-center justify-center gap-0.5 bg-white py-1 text-xs transition-colors sm:min-h-12 ${
+                          !inMonth
+                            ? 'cursor-default text-slate-300'
+                            : selected
+                                ? 'bg-azul-rey-50 text-azul-rey ring-1 ring-inset ring-azul-rey/50'
+                              : selectable
+                                ? 'font-semibold text-slate-700 hover:bg-azul-rey-50'
+                                : 'cursor-not-allowed text-slate-300'
+                        }`}
+                      >
+                        <span className="tabular-nums">{Number(date.slice(-2))}</span>
+                        {inMonth && (
+                          <span className={`text-[8px] leading-none ${selected ? 'text-azul-rey' : selectable ? 'text-emerald-700' : 'text-slate-300'}`}>
+                            {loadingAvailability ? '· · ·' : selectable ? availableCount : '—'}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="mt-2 flex items-center justify-between gap-2 text-[10px] text-slate-500">
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                  Número verde: horas libres
+                </span>
+                {loadingAvailability && <span className="inline-flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" /> Consultando</span>}
+              </div>
+              {availabilityError && <p role="alert" className="mt-2 text-xs text-red-600">{availabilityError}</p>}
+              {!loadingAvailability && availableAppointmentDates.length === 0 && (
+                <p className="mt-2 text-xs text-slate-500">No hay fechas disponibles durante este mes.</p>
+              )}
             </div>
 
-            {/* Franja Horaria Preferida */}
-            <div>
-              <label htmlFor={`${formId}-preferred-slot`} className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-dorado" /> Franja horaria
-              </label>
-              <select
-                id={`${formId}-preferred-slot`}
-                required={appointmentRequested}
-                value={preferredTimeSlot}
-                onChange={(e) => setPreferredTimeSlot(e.target.value as 'manana' | 'tarde')}
-                className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:border-azul-rey focus:ring-1 focus:ring-azul-rey bg-white"
-              >
-                <option value="">Seleccione una franja</option>
-                <option value="manana">Mañana (7:00 a.m. a 12:00 m.d.)</option>
-                <option value="tarde">Tarde (1:00 p.m. a 5:00 p.m.)</option>
-              </select>
-            </div>
+            {preferredDate && (
+              <div>
+                <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
+                  <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+                    <Clock className="h-3.5 w-3.5 text-dorado" /> Seleccione una hora
+                  </label>
+                  <span className="text-[11px] capitalize text-slate-500">{formatAppointmentDate(preferredDate)}</span>
+                </div>
+                {selectedAppointmentDay ? (
+                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+                    {Object.entries(selectedAppointmentDay.slots)
+                      .filter(([, slot]) => slot.available)
+                      .map(([timeSlot]) => {
+                        const slot = timeSlot as TimeSlot;
+                        const selected = preferredTimeSlot === slot;
+                        return (
+                          <button
+                            key={slot}
+                            type="button"
+                            aria-pressed={selected}
+                            onClick={() => setPreferredTimeSlot(slot)}
+                            className={`min-h-10 rounded-md border px-2 py-2 text-xs font-semibold tabular-nums transition-colors ${
+                              selected
+                                ? 'border-azul-rey bg-azul-rey text-white'
+                                : 'border-slate-300 bg-white text-slate-700 hover:border-azul-rey hover:text-azul-rey'
+                            }`}
+                          >
+                            {formatAppointmentTime(slot)}
+                          </button>
+                        );
+                      })}
+                  </div>
+                ) : (
+                  <p className="rounded-md border border-slate-200 bg-white px-3 py-2 text-xs text-slate-500">
+                    {loadingAvailability ? 'Actualizando horas disponibles...' : 'No quedan horas disponibles para este día.'}
+                  </p>
+                )}
+                <p className="mt-2 text-[11px] text-slate-500">
+                  Cada cita dura una hora. Horario de atención: 7:00 a.m. a 5:00 p.m.
+                </p>
+              </div>
+            )}
+
+            {availabilityError && preferredDate && (
+              <p className="text-xs text-red-600">{availabilityError}</p>
+            )}
           </div>
         )}
       </div>

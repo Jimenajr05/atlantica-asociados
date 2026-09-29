@@ -43,7 +43,14 @@ export async function sendCaseNotificationEmail(data: CaseEmailNotificationData)
       },
     });
 
-    const timeSlotLabel = data.preferredTimeSlot === 'manana' ? 'Mañana (7:00 a.m. - 12:00 m.d.)' : 'Tarde (1:00 p.m. - 5:00 p.m.)';
+    const timeSlotLabel = data.preferredTimeSlot
+      ? new Date(`2000-01-01T${data.preferredTimeSlot}:00Z`).toLocaleTimeString('es-CR', {
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true,
+          timeZone: 'UTC',
+        })
+      : 'Hora pendiente de asignación';
 
     const mailOptions = {
       from: process.env.SMTP_FROM || `"Atlántica & Asociados" <${user}>`,
@@ -115,7 +122,7 @@ ${data.description}
       data.appointmentRequested
         ? `<div style="background-color: #ecfdf5; border: 1px solid #a7f3d0; padding: 12px 16px; border-radius: 6px; margin-bottom: 20px;">
             <p style="margin: 0; color: #065f46; font-size: 13px;">
-              <strong>📅 Solicitud de Cita:</strong> El usuario solicitó atención el día <strong>${data.preferredDate}</strong> en horario <strong>${timeSlotLabel}</strong>.
+              <strong>📅 Solicitud de Cita:</strong> El usuario solicitó atención el día <strong>${data.preferredDate}</strong> a las <strong>${timeSlotLabel}</strong>.
             </p>
           </div>`
         : ''

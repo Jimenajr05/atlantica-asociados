@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -30,9 +31,14 @@ import {
   Building,
   Loader2,
   Info,
+  ShieldCheck,
+  CalendarDays,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-import { CaseRecord, CaseStatus, BlogPost } from '@/types';
+import { adminFetch } from '@/lib/admin-fetch';
+import { AppointmentAgenda } from '@/components/AppointmentAgenda';
+import { PageHero } from '@/components/PageHero';
+import { AppointmentStatus, AppointmentTimePreference, CaseRecord, CaseStatus, BlogPost, TimeSlot } from '@/types';
 
 interface ConfirmModalState {
   isOpen: boolean;
@@ -46,10 +52,20 @@ interface ConfirmModalState {
   onConfirm: () => Promise<void> | void;
 }
 
+function formatCaseAppointmentTime(value?: AppointmentTimePreference | null) {
+  const legacyValue = String(value || '');
+  if (legacyValue === 'manana') return 'Mañana · hora por asignar';
+  if (legacyValue === 'tarde') return 'Tarde · hora por asignar';
+  if (!legacyValue) return 'Hora por asignar';
+  const [hour, minute] = legacyValue.split(':').map(Number);
+  if (!Number.isFinite(hour) || !Number.isFinite(minute)) return 'Hora por confirmar';
+  return `${hour % 12 || 12}:${String(minute).padStart(2, '0')} ${hour < 12 ? 'a.m.' : 'p.m.'}`;
+}
+
 function AdminDashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState<'cases' | 'blog'>('cases');
+  const [activeTab, setActiveTab] = useState<'cases' | 'blog' | 'agenda'>('cases');
   const [loading, setLoading] = useState(true);
   const [userEmail, setUserEmail] = useState<string>('');
 
@@ -90,6 +106,8 @@ function AdminDashboardContent() {
     const tabParam = searchParams.get('tab');
     if (tabParam === 'blog') {
       setActiveTab('blog');
+    } else if (tabParam === 'agenda') {
+      setActiveTab('agenda');
     } else if (tabParam === 'cases') {
       setActiveTab('cases');
     }
@@ -166,6 +184,9 @@ function AdminDashboardContent() {
 
     return matchesSearch && matchesStatus && matchesAppointment;
   });
+  const activeAppointmentCount = cases.filter((caseItem) =>
+    caseItem.appointment_requested && caseItem.appointment_status !== 'cancelada'
+  ).length;
 
   // Cambiar estado de caso
   const handleStatusChange = async (caseId: string, newStatus: CaseStatus) => {
@@ -188,6 +209,45 @@ function AdminDashboardContent() {
     } catch (err) {
       showToast('Error actualizando estado.', 'error');
     }
+  };
+
+  const handleAppointmentStatusChange = async (caseId: string, status: AppointmentStatus) => {
+    const response = await adminFetch(`/api/admin/cases/${caseId}/appointment`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'No se pudo actualizar la cita.');
+
+    setCases((prev) => prev.map((caseItem) =>
+      caseItem.id === caseId ? { ...caseItem, appointment_status: status } : caseItem
+    ));
+    setSelectedCase((prev) => prev?.id === caseId ? { ...prev, appointment_status: status } : prev);
+    showToast(
+      status === 'confirmada'
+        ? 'Cita marcada como confirmada. Envíe el mensaje preparado en WhatsApp.'
+        : status === 'cancelada'
+          ? 'Solicitud cancelada y franja liberada.'
+          : 'Estado de la cita actualizado.',
+      'success'
+    );
+  };
+
+  const handleAppointmentTimeChange = async (caseId: string, timeSlot: TimeSlot) => {
+    const response = await adminFetch(`/api/admin/cases/${caseId}/appointment`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ preferredTimeSlot: timeSlot }),
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'No se pudo asignar la hora.');
+
+    setCases((prev) => prev.map((caseItem) =>
+      caseItem.id === caseId ? { ...caseItem, preferred_time_slot: timeSlot } : caseItem
+    ));
+    setSelectedCase((prev) => prev?.id === caseId ? { ...prev, preferred_time_slot: timeSlot } : prev);
+    showToast(`Hora asignada: ${formatCaseAppointmentTime(timeSlot)}.`, 'success');
   };
 
   // Abrir modal para eliminar caso
@@ -321,7 +381,7 @@ function AdminDashboardContent() {
   };
 
   return (
-    <div className="min-h-screen bg-[#fafafc] pb-20">
+    <div className="min-h-screen bg-slate-50 pb-16">
       {/* Toast Notification Flotante */}
       {toast && (
         <div className="fixed top-5 right-5 z-50 animate-fadeIn">
@@ -353,78 +413,136 @@ function AdminDashboardContent() {
       )}
 
       {/* Barra superior de administración */}
-      <nav className="sticky top-0 z-30 bg-[#0b1522] text-white border-b border-white/10 px-4 sm:px-8 py-3.5 flex flex-wrap justify-between items-center gap-4 shadow-sm">
-        <div className="flex items-center gap-3">
-          <span className="font-serif font-bold text-base tracking-widest text-white">
-            ATLÁNTICA
-          </span>
-          <span className="font-serif font-bold text-xs tracking-wider text-dorado">
-            &amp; ASOCIADOS
-          </span>
-          <span className="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded font-mono uppercase tracking-wider">
-            Panel Admin
-          </span>
-        </div>
+      <nav className="sticky top-0 z-30 border-b border-white/10 border-t-2 border-t-dorado/80 bg-[#101d2d] px-4 py-3 text-white shadow-md shadow-slate-900/10 sm:px-8">
+        <div className="mx-auto flex w-full max-w-screen-2xl flex-wrap items-center justify-between gap-x-6 gap-y-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <Link
+              href="/admin"
+              aria-label="Atlántica & Asociados, panel de administración"
+              className="flex min-w-0 items-center gap-2.5 rounded-md focus-visible:outline-white"
+            >
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-dorado/30 bg-white/5 p-1">
+                <Image
+                  src="/assets/logo-icono.png"
+                  alt=""
+                  width={36}
+                  height={36}
+                  className="h-full w-full object-contain"
+                />
+              </span>
+              <span className="min-w-0 leading-none">
+                <span className="block whitespace-nowrap font-serif text-[12px] font-bold tracking-wider text-white sm:text-sm">
+                  ATLÁNTICA <span className="text-dorado">&amp; ASOCIADOS</span>
+                </span>
+                <span className="mt-1 block text-[9px] uppercase tracking-[0.12em] text-slate-400">
+                  Poder y Estrategia
+                </span>
+              </span>
+            </Link>
+            <span className="hidden items-center gap-1.5 rounded border border-white/10 bg-white/[0.06] px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-300 sm:inline-flex">
+              <ShieldCheck className="h-3.5 w-3.5 text-dorado" />
+              Administración
+            </span>
+          </div>
 
-        <div className="flex items-center gap-4 text-xs">
-          <span className="text-slate-400 hidden sm:inline">Usuario:</span>
-          <span className="text-slate-200 font-semibold">{userEmail}</span>
-          <button
-            onClick={handleSignOut}
-            className="inline-flex items-center gap-1.5 text-slate-400 hover:text-red-400 p-1 transition-colors"
-            title="Cerrar sesión"
-          >
-            <LogOut className="w-4 h-4" />
-            <span className="hidden sm:inline">Cerrar Sesión</span>
-          </button>
+          <div className="flex w-full min-w-0 items-center justify-between gap-3 border-t border-white/10 pt-3 sm:w-auto sm:justify-end sm:border-l sm:border-t-0 sm:pl-5 sm:pt-0">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-dorado">
+                <User className="h-4 w-4" />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-[10px] uppercase tracking-wider text-slate-400">
+                  Cuenta activa
+                </span>
+                <span className="block max-w-[58vw] truncate text-xs font-medium text-white sm:max-w-[220px]">
+                  {userEmail || 'Sesión de administración'}
+                </span>
+              </span>
+            </div>
+            <button
+              onClick={handleSignOut}
+              className="inline-flex shrink-0 items-center gap-2 rounded-md border border-white/15 px-3 py-2 text-xs font-semibold text-slate-200 transition-colors hover:border-red-300/40 hover:bg-red-400/10 hover:text-red-200"
+              title="Cerrar sesión"
+            >
+              <LogOut className="h-4 w-4" />
+              <span>Cerrar sesión</span>
+            </button>
+          </div>
         </div>
       </nav>
 
+      <PageHero
+        eyebrow="Panel de administración"
+        title="Centro de gestión"
+        description="Seguimiento de expedientes y publicaciones."
+        asideValue={String(cases.length).padStart(2, '0')}
+        asideLabel="casos recibidos"
+      />
+
       {/* Contenedor Principal */}
-      <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-10 py-7 sm:py-9 space-y-8">
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <span className="text-[11px] font-bold uppercase text-slate-500">Administración / Atlántica &amp; Asociados</span>
-            <h1 className="mt-1 text-2xl sm:text-3xl font-serif font-bold text-slate-900">Centro de gestión</h1>
-            <p className="mt-1 text-sm text-slate-500">Seguimiento de expedientes y publicaciones.</p>
-          </div>
-          <button
-            onClick={checkSessionAndFetchData}
-            className="inline-flex items-center justify-center gap-2 self-start sm:self-auto rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-700 shadow-sm transition-colors hover:bg-slate-50 hover:text-azul-rey"
-            title="Recargar datos"
-          >
-            <RefreshCw className="h-3.5 w-3.5" />
-            Actualizar
-          </button>
-        </div>
+      <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-10 py-7 sm:py-9 space-y-7">
 
         {/* Pestañas de Navegación del Panel */}
-        <div className="flex items-center justify-between gap-3 border-b border-slate-200 pb-3">
-          <div className="inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
+        <div className="flex items-center gap-2 sm:justify-between sm:gap-3">
+          <div className="inline-flex min-w-0 flex-1 items-center gap-1 overflow-x-auto border-b border-slate-200">
             <button
               onClick={() => setActiveTab('cases')}
-              className={`shrink-0 px-3.5 sm:px-4 py-2.5 rounded-lg text-xs sm:text-sm font-bold flex items-center gap-2 transition-all ${
+              aria-label={`Casos Recibidos (${cases.length})`}
+              className={`flex shrink-0 items-center gap-1.5 border-b-2 px-2.5 py-2.5 text-[11px] font-bold transition-colors sm:gap-2 sm:px-4 sm:py-3 sm:text-sm ${
                 activeTab === 'cases'
-                  ? 'bg-azul-rey text-white shadow-sm'
-                  : 'text-slate-600 hover:bg-slate-50'
+                  ? 'border-azul-rey text-azul-rey'
+                  : 'border-transparent text-slate-500 hover:text-slate-800'
               }`}
             >
-              <FileCheck className="w-4 h-4 text-dorado" />
-              <span>Casos Recibidos ({cases.length})</span>
+              <FileCheck className={`w-4 h-4 ${activeTab === 'cases' ? 'text-dorado' : 'text-slate-400'}`} />
+              <span className="sm:hidden">Casos</span>
+              <span className="hidden sm:inline">Casos Recibidos ({cases.length})</span>
+              <span className={`rounded-full px-1.5 py-0.5 text-[10px] leading-none sm:hidden ${activeTab === 'cases' ? 'bg-azul-rey/10 text-azul-rey' : 'bg-slate-100 text-slate-600'}`}>
+                {cases.length}
+              </span>
             </button>
             <button
               onClick={() => setActiveTab('blog')}
-              className={`shrink-0 px-3.5 sm:px-4 py-2.5 rounded-lg text-xs sm:text-sm font-bold flex items-center gap-2 transition-all ${
+              aria-label={`Gestión del Blog (${posts.length})`}
+              className={`flex shrink-0 items-center gap-1.5 border-b-2 px-2.5 py-2.5 text-[11px] font-bold transition-colors sm:gap-2 sm:px-4 sm:py-3 sm:text-sm ${
                 activeTab === 'blog'
-                  ? 'bg-azul-rey text-white shadow-sm'
-                  : 'text-slate-600 hover:bg-slate-50'
+                  ? 'border-azul-rey text-azul-rey'
+                  : 'border-transparent text-slate-500 hover:text-slate-800'
               }`}
             >
-              <BookOpen className="w-4 h-4 text-dorado" />
-              <span>Gestión del Blog ({posts.length})</span>
+              <BookOpen className={`w-4 h-4 ${activeTab === 'blog' ? 'text-dorado' : 'text-slate-400'}`} />
+              <span className="sm:hidden">Blog</span>
+              <span className="hidden sm:inline">Gestión del Blog ({posts.length})</span>
+              <span className={`rounded-full px-1.5 py-0.5 text-[10px] leading-none sm:hidden ${activeTab === 'blog' ? 'bg-azul-rey/10 text-azul-rey' : 'bg-slate-100 text-slate-600'}`}>
+                {posts.length}
+              </span>
+            </button>
+            <button
+              onClick={() => setActiveTab('agenda')}
+              aria-label={`Agenda de citas (${activeAppointmentCount})`}
+              className={`flex shrink-0 items-center gap-1.5 border-b-2 px-2.5 py-2.5 text-[11px] font-bold transition-colors sm:gap-2 sm:px-4 sm:py-3 sm:text-sm ${
+                activeTab === 'agenda'
+                  ? 'border-azul-rey text-azul-rey'
+                  : 'border-transparent text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <CalendarDays className={`h-4 w-4 ${activeTab === 'agenda' ? 'text-dorado' : 'text-slate-400'}`} />
+              <span className="sm:hidden">Agenda</span>
+              <span className="hidden sm:inline">Agenda de citas ({activeAppointmentCount})</span>
+              <span className={`rounded-full px-1.5 py-0.5 text-[10px] leading-none sm:hidden ${activeTab === 'agenda' ? 'bg-azul-rey/10 text-azul-rey' : 'bg-slate-100 text-slate-600'}`}>
+                {activeAppointmentCount}
+              </span>
             </button>
           </div>
-
+          <button
+            onClick={checkSessionAndFetchData}
+            aria-label="Actualizar datos"
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-slate-300 bg-white p-0 text-slate-700 shadow-sm transition-colors hover:border-azul-rey/40 hover:bg-azul-rey-50 hover:text-azul-rey sm:h-auto sm:w-auto sm:gap-2 sm:px-3.5 sm:py-2.5 sm:text-xs sm:font-semibold"
+            title="Recargar datos"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Actualizar</span>
+          </button>
         </div>
 
         {/* ====================================================================
@@ -433,33 +551,61 @@ function AdminDashboardContent() {
         {activeTab === 'cases' && (
           <div className="space-y-6">
             {/* Contadores y Métricas */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-white p-5 rounded-xl border border-slate-200 border-l-4 border-l-azul-rey shadow-sm">
-                <span className="text-[11px] text-slate-500 uppercase tracking-wider block font-bold">Total Casos</span>
-                <span className="text-2xl font-bold text-azul-rey">{cases.length}</span>
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
+              <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm sm:p-4 xl:p-5">
+                <div className="flex min-w-0 items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <span className="block break-words text-[9px] font-bold uppercase tracking-wider text-slate-500 sm:text-[11px]">Total de casos</span>
+                    <span className="mt-1 block text-2xl font-semibold tabular-nums leading-none text-slate-900 sm:text-3xl">{cases.length}</span>
+                  </div>
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-azul-rey-50 text-azul-rey sm:h-9 sm:w-9">
+                    <FileText className="h-4 w-4" />
+                  </span>
+                </div>
               </div>
-              <div className="bg-white p-5 rounded-xl border border-slate-200 border-l-4 border-l-blue-500 shadow-sm">
-                <span className="text-[11px] text-blue-600 uppercase tracking-wider block font-bold">Nuevos</span>
-                <span className="text-2xl font-bold text-blue-700">
-                  {cases.filter((c) => c.status === 'nuevo').length}
-                </span>
+              <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm sm:p-4 xl:p-5">
+                <div className="flex min-w-0 items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <span className="block break-words text-[9px] font-bold uppercase tracking-wider text-sky-700 sm:text-[11px]">Nuevos</span>
+                    <span className="mt-1 block text-2xl font-semibold tabular-nums leading-none text-sky-800 sm:text-3xl">
+                      {cases.filter((c) => c.status === 'nuevo').length}
+                    </span>
+                  </div>
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-sky-50 text-sky-700 sm:h-9 sm:w-9">
+                    <AlertCircle className="h-4 w-4" />
+                  </span>
+                </div>
               </div>
-              <div className="bg-white p-5 rounded-xl border border-slate-200 border-l-4 border-l-amber-500 shadow-sm">
-                <span className="text-[11px] text-amber-600 uppercase tracking-wider block font-bold">Citas Solicitadas</span>
-                <span className="text-2xl font-bold text-amber-700">
-                  {cases.filter((c) => c.appointment_requested).length}
-                </span>
+              <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm sm:p-4 xl:p-5">
+                <div className="flex min-w-0 items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <span className="block break-words text-[9px] font-bold uppercase tracking-wider text-amber-700 sm:text-[11px]">Citas solicitadas</span>
+                    <span className="mt-1 block text-2xl font-semibold tabular-nums leading-none text-amber-800 sm:text-3xl">
+                      {cases.filter((c) => c.appointment_requested).length}
+                    </span>
+                  </div>
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-amber-50 text-amber-700 sm:h-9 sm:w-9">
+                    <Calendar className="h-4 w-4" />
+                  </span>
+                </div>
               </div>
-              <div className="bg-white p-5 rounded-xl border border-slate-200 border-l-4 border-l-emerald-600 shadow-sm">
-                <span className="text-[11px] text-purple-600 uppercase tracking-wider block font-bold">En Proceso / Análisis</span>
-                <span className="text-2xl font-bold text-purple-700">
-                  {cases.filter((c) => c.status === 'en_proceso' || c.status === 'en_analisis').length}
-                </span>
+              <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm sm:p-4 xl:p-5">
+                <div className="flex min-w-0 items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <span className="block break-words text-[9px] font-bold uppercase tracking-wider text-emerald-700 sm:text-[11px]">En seguimiento</span>
+                    <span className="mt-1 block text-2xl font-semibold tabular-nums leading-none text-emerald-800 sm:text-3xl">
+                      {cases.filter((c) => c.status === 'en_proceso' || c.status === 'en_analisis').length}
+                    </span>
+                  </div>
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-emerald-50 text-emerald-700 sm:h-9 sm:w-9">
+                    <Clock className="h-4 w-4" />
+                  </span>
+                </div>
               </div>
             </div>
 
             {/* Barra de Filtros y Búsqueda */}
-            <div className="bg-white p-4 sm:p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
+            <div className="bg-white p-4 sm:p-5 rounded-lg border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
               <div className="relative w-full md:w-80">
                 <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5 pointer-events-none" />
                 <input
@@ -467,18 +613,21 @@ function AdminDashboardContent() {
                   placeholder="Buscar por nombre, código o teléfono..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 text-xs rounded-lg border border-slate-300 focus:border-azul-rey focus:ring-1 focus:ring-azul-rey"
+                  className="w-full pl-9 pr-3 py-2.5 text-xs rounded-md border border-slate-300 bg-slate-50/60 focus:border-azul-rey focus:ring-1 focus:ring-azul-rey"
                 />
               </div>
 
-              <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-                <div className="flex items-center gap-1.5 text-xs text-slate-600">
-                  <Filter className="w-3.5 h-3.5 text-slate-400" />
-                  <span>Estado:</span>
+              <div className="flex w-full flex-col gap-3 md:w-auto md:flex-row md:items-center">
+                <div className="flex w-full min-w-0 items-center gap-2 text-xs text-slate-600 md:w-auto">
+                  <label htmlFor="case-status-filter" className="flex w-[72px] shrink-0 items-center gap-1.5 md:w-auto">
+                    <Filter className="h-3.5 w-3.5 text-slate-400" />
+                    <span>Estado:</span>
+                  </label>
                   <select
+                    id="case-status-filter"
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
-                    className="px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white font-medium"
+                    className="w-full min-w-0 rounded-md border border-slate-300 bg-white px-2.5 py-2 text-xs font-medium md:w-auto"
                   >
                     <option value="todos">Todos los estados</option>
                     <option value="nuevo">Nuevos</option>
@@ -488,12 +637,15 @@ function AdminDashboardContent() {
                   </select>
                 </div>
 
-                <div className="flex items-center gap-1.5 text-xs text-slate-600">
-                  <span>Cita:</span>
+                <div className="flex w-full min-w-0 items-center gap-2 text-xs text-slate-600 md:w-auto">
+                  <label htmlFor="case-appointment-filter" className="w-[72px] shrink-0 md:w-auto">
+                    Cita:
+                  </label>
                   <select
+                    id="case-appointment-filter"
                     value={appointmentFilter}
                     onChange={(e) => setAppointmentFilter(e.target.value)}
-                    className="px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white font-medium"
+                    className="w-full min-w-0 rounded-md border border-slate-300 bg-white px-2.5 py-2 text-xs font-medium md:w-auto"
                   >
                     <option value="todos">Todas</option>
                     <option value="si">Solo con cita solicitada</option>
@@ -504,10 +656,10 @@ function AdminDashboardContent() {
             </div>
 
             {/* Tabla de Casos */}
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="min-w-[900px] w-full text-left text-xs text-slate-700">
-                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase font-bold text-[11px]">
+                  <thead className="bg-slate-100/80 border-b border-slate-200 text-slate-600 uppercase font-bold text-[10px] tracking-wider">
                     <tr>
                       <th className="py-3.5 px-4">Código / Fecha</th>
                       <th className="py-3.5 px-4">Ciudadano</th>
@@ -526,7 +678,7 @@ function AdminDashboardContent() {
                       </tr>
                     ) : (
                       filteredCases.map((c) => (
-                        <tr key={c.id} className="hover:bg-slate-50/80 transition-colors">
+                        <tr key={c.id} className="hover:bg-azul-rey-50/50 transition-colors">
                           <td className="py-3.5 px-4">
                             <span className="font-mono font-bold text-azul-rey block">
                               {c.case_code || 'CAS-S/N'}
@@ -546,7 +698,7 @@ function AdminDashboardContent() {
                             {c.appointment_requested ? (
                               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
                                 <Calendar className="w-3 h-3 text-amber-600" />
-                                Cita: {c.preferred_time_slot === 'manana' ? 'Mañana' : 'Tarde'}
+                                Cita: {formatCaseAppointmentTime(c.preferred_time_slot)}
                               </span>
                             ) : (
                               <span className="text-slate-400 text-[11px]">—</span>
@@ -594,7 +746,7 @@ function AdminDashboardContent() {
             ==================================================================== */}
         {activeTab === 'blog' && (
           <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <h2 className="text-xl font-bold text-azul-rey font-serif">Artículos del Blog</h2>
                 <p className="text-xs text-slate-500">Cree, edite y publique artículos para el sitio.</p>
@@ -602,17 +754,17 @@ function AdminDashboardContent() {
 
               <Link
                 href="/admin/blog/new"
-                className="inline-flex items-center gap-2 bg-azul-rey hover:bg-azul-rey-dark text-white px-4 py-2 rounded-xl text-xs font-bold shadow transition-colors"
+                className="inline-flex items-center justify-center gap-2 bg-azul-rey hover:bg-azul-rey-dark text-white px-4 py-2.5 rounded-md text-xs font-bold shadow-sm transition-colors"
               >
                 <Plus className="w-4 h-4 text-dorado" />
                 <span>Nuevo Artículo</span>
               </Link>
             </div>
 
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
               <table className="min-w-[640px] w-full text-left text-xs text-slate-700">
-                <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase font-bold text-[11px]">
+                <thead className="bg-slate-100/80 border-b border-slate-200 text-slate-600 uppercase font-bold text-[10px] tracking-wider">
                   <tr>
                     <th className="py-3.5 px-4">Título</th>
                     <th className="py-3.5 px-4">Estado</th>
@@ -681,6 +833,14 @@ function AdminDashboardContent() {
             </div>
           </div>
         )}
+
+        {activeTab === 'agenda' && (
+          <AppointmentAgenda
+            cases={cases}
+            onAppointmentStatusChange={handleAppointmentStatusChange}
+            onAppointmentTimeChange={handleAppointmentTimeChange}
+          />
+        )}
       </div>
 
       {/* ====================================================================
@@ -745,8 +905,8 @@ function AdminDashboardContent() {
           MODAL DETALLADO DE CASO
           ==================================================================== */}
       {selectedCase && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto animate-fadeIn">
-          <div className="bg-white rounded-2xl max-w-3xl w-full p-6 sm:p-8 space-y-6 max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-200">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 overflow-y-auto animate-fadeIn">
+          <div className="bg-white rounded-2xl max-w-3xl w-full p-4 sm:p-6 lg:p-8 space-y-6 max-h-[calc(100dvh-1rem)] overflow-y-auto shadow-2xl border border-slate-200">
             {/* Cabecera del Modal */}
             <div className="flex items-start justify-between border-b border-slate-100 pb-4">
               <div>
@@ -771,28 +931,28 @@ function AdminDashboardContent() {
 
             {/* Datos de contacto y cita */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs">
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-1.5 text-slate-700">
-                  <Phone className="w-3.5 h-3.5 text-azul-rey" />
-                  <span className="font-bold">Teléfono/WhatsApp:</span>
+              <div className="min-w-0 space-y-1.5">
+                <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 text-slate-700">
+                  <Phone className="w-3.5 h-3.5 shrink-0 text-azul-rey" />
+                  <span className="shrink-0 font-bold">Teléfono/WhatsApp:</span>
                   <a
                     href={`https://wa.me/${selectedCase.phone.replace(/[^0-9]/g, '')}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-emerald-700 font-bold hover:underline"
+                    className="break-all font-bold text-emerald-700 hover:underline"
                   >
                     {selectedCase.phone}
                   </a>
                 </div>
-                <div className="flex items-center gap-1.5 text-slate-700">
-                  <Mail className="w-3.5 h-3.5 text-azul-rey" />
-                  <span className="font-bold">Correo:</span>
-                  <span>{selectedCase.email || 'No proporcionado'}</span>
+                <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 text-slate-700">
+                  <Mail className="w-3.5 h-3.5 shrink-0 text-azul-rey" />
+                  <span className="shrink-0 font-bold">Correo:</span>
+                  <span className="min-w-0 break-all">{selectedCase.email || 'No proporcionado'}</span>
                 </div>
-                <div className="flex items-center gap-1.5 text-slate-700">
-                  <Building className="w-3.5 h-3.5 text-azul-rey" />
-                  <span className="font-bold">Institución:</span>
-                  <span>{selectedCase.institution || 'No indicada'}</span>
+                <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 text-slate-700">
+                  <Building className="w-3.5 h-3.5 shrink-0 text-azul-rey" />
+                  <span className="shrink-0 font-bold">Institución:</span>
+                  <span className="min-w-0 break-words">{selectedCase.institution || 'No indicada'}</span>
                 </div>
               </div>
 
@@ -800,12 +960,14 @@ function AdminDashboardContent() {
               <div className="border-t sm:border-t-0 sm:border-l border-slate-200 sm:pl-4 space-y-1.5">
                 <span className="font-bold text-slate-900 block">Solicitud de Cita:</span>
                 {selectedCase.appointment_requested ? (
-                  <div className="bg-amber-100/70 p-2.5 rounded-lg border border-amber-300 text-amber-900 space-y-1">
-                    <p className="font-bold flex items-center gap-1">
-                      <Calendar className="w-3.5 h-3.5" /> Día solicitado: {selectedCase.preferred_date || 'A convenir'}
+                  <div className="min-w-0 rounded-lg border border-amber-300 bg-amber-100/70 p-2.5 text-amber-900 space-y-1">
+                    <p className="flex flex-wrap items-start gap-x-1 font-bold break-words">
+                      <Calendar className="mt-0.5 h-3.5 w-3.5 shrink-0" /> Día solicitado: {selectedCase.preferred_date || 'A convenir'}
                     </p>
                     <p className="text-[11px]">
-                      Franja: {selectedCase.preferred_time_slot === 'manana' ? 'Mañana (7am - 12md)' : 'Tarde (1pm - 5pm)'}
+                      {selectedCase.preferred_time_slot === 'manana' || selectedCase.preferred_time_slot === 'tarde'
+                        ? `Horario preferido: ${formatCaseAppointmentTime(selectedCase.preferred_time_slot)}`
+                        : `Hora: ${formatCaseAppointmentTime(selectedCase.preferred_time_slot)} · Cita de una hora`}
                     </p>
                   </div>
                 ) : (
@@ -819,7 +981,7 @@ function AdminDashboardContent() {
               <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                 Descripción del Caso
               </h4>
-              <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl text-xs sm:text-sm text-slate-800 leading-relaxed whitespace-pre-wrap">
+              <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl text-xs sm:text-sm text-slate-800 leading-relaxed whitespace-pre-wrap break-words">
                 {selectedCase.description}
               </div>
             </div>
@@ -836,19 +998,19 @@ function AdminDashboardContent() {
                   {selectedCase.files.map((file) => (
                     <li
                       key={file.id}
-                      className="flex items-center justify-between p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-xs"
+                      className="flex min-w-0 flex-col gap-2 p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-xs sm:flex-row sm:items-center sm:justify-between"
                     >
-                      <div className="flex items-center gap-2 truncate pr-2">
+                      <div className="flex min-w-0 items-center gap-2 pr-2">
                         <FileText className="w-4 h-4 text-azul-rey flex-shrink-0" />
-                        <span className="font-medium text-slate-800 truncate">{file.file_name}</span>
-                        <span className="text-slate-400 text-[10px]">
+                        <span className="min-w-0 truncate font-medium text-slate-800">{file.file_name}</span>
+                        <span className="shrink-0 text-slate-400 text-[10px]">
                           ({(file.file_size / (1024 * 1024)).toFixed(2)} MB)
                         </span>
                       </div>
                       <button
                         type="button"
                         onClick={() => handleDownloadSignedUrl(selectedCase.id, file.file_path)}
-                        className="inline-flex items-center gap-1 px-3 py-1 bg-azul-rey hover:bg-azul-rey-dark text-white rounded-lg font-bold text-[11px] shadow-sm transition-colors flex-shrink-0"
+                        className="inline-flex shrink-0 items-center justify-center gap-1 self-end rounded-lg bg-azul-rey px-3 py-2 text-[11px] font-bold text-white shadow-sm transition-colors hover:bg-azul-rey-dark sm:self-auto"
                       >
                         <Download className="w-3 h-3 text-dorado" />
                         <span>Descargar</span>
@@ -869,28 +1031,28 @@ function AdminDashboardContent() {
                 <div className="space-y-2 max-h-36 overflow-y-auto pr-1">
                   {selectedCase.notes.map((note) => (
                     <div key={note.id} className="p-2.5 bg-slate-100 rounded-lg text-xs border border-slate-200">
-                      <div className="flex justify-between text-[10px] text-slate-500 mb-1">
+                      <div className="mb-1 flex flex-col gap-1 text-[10px] text-slate-500 sm:flex-row sm:justify-between">
                         <span className="font-bold">{note.author_email || 'Admin'}</span>
                         <span>{new Date(note.created_at).toLocaleString('es-CR')}</span>
                       </div>
-                      <p className="text-slate-800">{note.content}</p>
+                      <p className="break-words text-slate-800">{note.content}</p>
                     </div>
                   ))}
                 </div>
               )}
 
-              <form onSubmit={handleAddNote} className="flex gap-2">
+              <form onSubmit={handleAddNote} className="flex flex-col gap-2 sm:flex-row">
                 <input
                   type="text"
                   placeholder="Escriba una nota interna sobre este expediente..."
                   value={newNoteContent}
                   onChange={(e) => setNewNoteContent(e.target.value)}
-                  className="flex-1 px-3 py-1.5 rounded-lg border border-slate-300 text-xs"
+                  className="w-full min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-xs sm:w-auto"
                 />
                 <button
                   type="submit"
                   disabled={addingNote || !newNoteContent.trim()}
-                  className="px-4 py-1.5 bg-slate-800 hover:bg-negro text-white rounded-lg text-xs font-bold transition-colors disabled:opacity-60"
+                  className="w-full rounded-lg bg-slate-800 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-negro disabled:opacity-60 sm:w-auto"
                 >
                   {addingNote ? 'Guardando...' : 'Agregar Nota'}
                 </button>

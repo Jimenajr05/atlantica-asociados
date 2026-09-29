@@ -1,14 +1,72 @@
 import { Router, Request, Response } from 'express';
 import {
   getAllCases,
+  getCaseById,
   updateCaseStatus,
   addCaseNote,
   deleteCaseRecord,
+  updateCaseAppointmentTime,
 } from '../services/cases-store';
 import { createAdminClient } from '../services/supabase-admin';
-import { CaseStatus } from '../types';
+import { APPOINTMENT_TIME_SLOTS, AppointmentStatus, CaseStatus, TimeSlot } from '../types';
+import { requireAdmin } from '../middleware/require-admin';
+import { updateCaseAppointmentStatus } from '../services/cases-store';
+import { isAppointmentSlotAvailable } from '../services/appointments-store';
 
 const router = Router();
+
+router.patch('/:id/appointment', requireAdmin, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const preferredTimeSlot = req.body?.preferredTimeSlot as TimeSlot | undefined;
+    if (preferredTimeSlot !== undefined) {
+      if (!APPOINTMENT_TIME_SLOTS.includes(preferredTimeSlot)) {
+        res.status(400).json({ error: 'Seleccione una hora válida.' });
+        return;
+      }
+
+      const caseItem = await getCaseById(req.params.id);
+      if (!caseItem?.appointment_requested || !caseItem.preferred_date) {
+        res.status(404).json({ error: 'No se encontró la solicitud de cita.' });
+        return;
+      }
+
+      const available = await isAppointmentSlotAvailable(caseItem.preferred_date, preferredTimeSlot, {
+        excludeBookingId: caseItem.id,
+        ignoreLegacyReservations: true,
+      });
+      if (!available) {
+        res.status(409).json({ error: 'Esa hora ya no está disponible. Seleccione otra.' });
+        return;
+      }
+
+      const updated = await updateCaseAppointmentTime(caseItem.id, preferredTimeSlot);
+      if (!updated) {
+        res.status(404).json({ error: 'No se pudo asignar una hora a esta solicitud.' });
+        return;
+      }
+
+      res.json({ success: true, preferredTimeSlot });
+      return;
+    }
+
+    const status = req.body?.status as AppointmentStatus;
+    const validStatuses: AppointmentStatus[] = ['pendiente', 'confirmada', 'cancelada'];
+    if (!validStatuses.includes(status)) {
+      res.status(400).json({ error: 'Estado de cita no válido.' });
+      return;
+    }
+
+    const updated = await updateCaseAppointmentStatus(req.params.id, status);
+    if (!updated) {
+      res.status(404).json({ error: 'No se encontró la solicitud de cita.' });
+      return;
+    }
+
+    res.json({ success: true, status });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || 'No se pudo actualizar la cita.' });
+  }
+});
 
 // GET /api/admin/cases
 router.get('/', async (_req: Request, res: Response): Promise<void> => {

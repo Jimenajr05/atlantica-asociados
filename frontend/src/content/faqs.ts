@@ -28,7 +28,7 @@ export const FAQS: FaqItem[] = [
   {
     id: "faq-5",
     question: "¿Cómo solicito una cita y cuál es el horario de atención?",
-    answer: "Al llenar el formulario de caso en nuestra página web, puede marcar la casilla 'Solicitar una cita' y elegir si prefiere la mañana o la tarde, de lunes a viernes entre 7:00 a.m. y 5:00 p.m. Nos comunicaremos directamente a su WhatsApp para coordinar la llamada o videollamada.",
+    answer: "Al llenar el formulario de caso en nuestra página web, puede marcar la casilla para solicitar una cita, elegir una fecha en el calendario y seleccionar una hora disponible. Cada cita dura una hora y se atiende de lunes a viernes entre 7:00 a.m. y 5:00 p.m. Le confirmaremos la hora por WhatsApp.",
   },
   {
     id: "faq-6",

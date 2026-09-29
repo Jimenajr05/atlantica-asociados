@@ -11,6 +11,8 @@ import {
 } from '../validations/case';
 import { checkIpRateLimit } from '../services/rate-limit';
 import { sendCaseNotificationEmail } from '../services/email';
+import { isAppointmentSlotAvailable } from '../services/appointments-store';
+import { TimeSlot } from '../types';
 
 const router = Router();
 const upload = multer({
@@ -75,6 +77,19 @@ router.post('/', upload.array('files', MAX_FILES_COUNT), async (req: Request, re
 
     const validatedData = parseResult.data;
 
+    if (
+      validatedData.appointmentRequested &&
+      !(await isAppointmentSlotAvailable(
+        validatedData.preferredDate || '',
+        validatedData.preferredTimeSlot as TimeSlot
+      ))
+    ) {
+      res.status(409).json({
+        error: 'Ese día o franja acaba de ocuparse. Actualice las opciones y seleccione otra disponibilidad.',
+      });
+      return;
+    }
+
     // 4. File attachments validation
     const files = (req.files as Express.Multer.File[]) || [];
     if (files.length > MAX_FILES_COUNT) {
@@ -129,6 +144,7 @@ router.post('/', upload.array('files', MAX_FILES_COUNT), async (req: Request, re
           description: validatedData.description,
           privacy_accepted: true,
           appointment_requested: validatedData.appointmentRequested,
+          appointment_status: validatedData.appointmentRequested ? 'pendiente' : null,
           preferred_date: validatedData.appointmentRequested ? validatedData.preferredDate : null,
           preferred_time_slot: validatedData.appointmentRequested ? validatedData.preferredTimeSlot : null,
           status: 'nuevo',
@@ -178,6 +194,7 @@ router.post('/', upload.array('files', MAX_FILES_COUNT), async (req: Request, re
         description: validatedData.description,
         privacy_accepted: true,
         appointment_requested: validatedData.appointmentRequested,
+        appointment_status: validatedData.appointmentRequested ? 'pendiente' : null,
         preferred_date: validatedData.appointmentRequested ? validatedData.preferredDate : null,
         preferred_time_slot: (validatedData.appointmentRequested && validatedData.preferredTimeSlot) ? (validatedData.preferredTimeSlot as any) : null,
         status: 'nuevo',

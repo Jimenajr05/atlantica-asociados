@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { APPOINTMENT_TIME_SLOTS } from '@/types';
 
 export const ALLOWED_FILE_TYPES = [
   'application/pdf',
@@ -46,7 +47,7 @@ export const caseSubmissionSchema = z.object({
   }),
   appointmentRequested: z.boolean().default(false),
   preferredDate: z.string().optional().or(z.literal('')),
-  preferredTimeSlot: z.enum(['manana', 'tarde']).optional().or(z.literal('')),
+  preferredTimeSlot: z.enum(APPOINTMENT_TIME_SLOTS).optional().or(z.literal('')),
   // Campo trampa para detectar bots (Honeypot) - Debe venir vacío
   websiteUrlHoneypot: z.string().max(0, { message: 'Envío no permitido.' }).optional().or(z.literal('')),
 }).superRefine((data, ctx) => {
@@ -70,11 +71,11 @@ export const caseSubmissionSchema = z.object({
       }
     }
 
-    if (!data.preferredTimeSlot || (data.preferredTimeSlot !== 'manana' && data.preferredTimeSlot !== 'tarde')) {
+    if (!data.preferredTimeSlot || !APPOINTMENT_TIME_SLOTS.includes(data.preferredTimeSlot as (typeof APPOINTMENT_TIME_SLOTS)[number])) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['preferredTimeSlot'],
-        message: 'Seleccione la franja horaria preferida (Mañana: 7am-12md o Tarde: 1pm-5pm).',
+        message: 'Seleccione una hora disponible entre las 7:00 a.m. y las 4:00 p.m.',
       });
     }
   }

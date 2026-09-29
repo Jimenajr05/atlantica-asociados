@@ -1,6 +1,13 @@
 import fs from 'fs';
 import path from 'path';
-import { CaseRecord, CaseStatus, CaseNoteRecord, CaseFileRecord } from '../types';
+import {
+  AppointmentBooking,
+  AppointmentStatus,
+  CaseRecord,
+  CaseStatus,
+  CaseNoteRecord,
+  CaseFileRecord,
+} from '../types';
 import { createAdminClient } from './supabase-admin';
 
 const dataDir = path.resolve(process.cwd(), 'data');
@@ -64,6 +71,36 @@ export async function getAllCases(): Promise<CaseRecord[]> {
   return ensureLocalStore();
 }
 
+export async function getAppointmentBookings(): Promise<AppointmentBooking[]> {
+  const adminSupabase = createAdminClient();
+  if (adminSupabase) {
+    const { data, error } = await adminSupabase
+      .from('cases')
+      .select('id, case_code, full_name, phone, email, preferred_date, preferred_time_slot, appointment_status')
+      .eq('appointment_requested', true);
+
+    if (error) throw error;
+
+    return (data || []).map((booking) => ({
+      ...booking,
+      appointment_status: booking.appointment_status || 'pendiente',
+    })) as AppointmentBooking[];
+  }
+
+  return ensureLocalStore()
+    .filter((record) => record.appointment_requested)
+    .map((record) => ({
+        id: record.id,
+        case_code: record.case_code,
+        full_name: record.full_name,
+        phone: record.phone,
+        email: record.email,
+        preferred_date: record.preferred_date,
+        preferred_time_slot: record.preferred_time_slot,
+        appointment_status: record.appointment_status || 'pendiente',
+      }));
+}
+
 // 2. Obtener un caso por ID o por Código de Caso
 export async function getCaseById(idOrCode: string): Promise<CaseRecord | null> {
   const adminSupabase = createAdminClient();
@@ -121,6 +158,9 @@ export async function createCaseRecord(
     description: caseData.description || '',
     privacy_accepted: Boolean(caseData.privacy_accepted),
     appointment_requested: Boolean(caseData.appointment_requested),
+    appointment_status: caseData.appointment_requested
+      ? caseData.appointment_status || 'pendiente'
+      : null,
     preferred_date: caseData.preferred_date || null,
     preferred_time_slot: caseData.preferred_time_slot || null,
     status: caseData.status || 'nuevo',
@@ -144,6 +184,7 @@ export async function createCaseRecord(
           description: newRecord.description,
           privacy_accepted: newRecord.privacy_accepted,
           appointment_requested: newRecord.appointment_requested,
+          appointment_status: newRecord.appointment_status,
           preferred_date: newRecord.preferred_date,
           preferred_time_slot: newRecord.preferred_time_slot,
           status: newRecord.status,
@@ -187,6 +228,58 @@ export async function updateCaseStatus(id: string, status: CaseStatus): Promise<
     return true;
   }
   return false;
+}
+
+export async function updateCaseAppointmentStatus(
+  id: string,
+  status: AppointmentStatus
+): Promise<boolean> {
+  const adminSupabase = createAdminClient();
+  if (adminSupabase) {
+    const { error } = await adminSupabase
+      .from('cases')
+      .update({ appointment_status: status })
+      .eq('id', id);
+
+    if (error) throw error;
+  }
+
+  const current = ensureLocalStore();
+  const record = current.find((item) => item.id === id || item.case_code === id);
+  if (!record || !record.appointment_requested) return false;
+
+  record.appointment_status = status;
+  saveLocalStore(current);
+  return true;
+}
+
+export async function updateCaseAppointmentTime(
+  id: string,
+  timeSlot: CaseRecord['preferred_time_slot']
+): Promise<boolean> {
+  if (!timeSlot || timeSlot === 'manana' || timeSlot === 'tarde') return false;
+
+  const adminSupabase = createAdminClient();
+  if (adminSupabase) {
+    const { data, error } = await adminSupabase
+      .from('cases')
+      .update({ preferred_time_slot: timeSlot })
+      .eq('id', id)
+      .eq('appointment_requested', true)
+      .select('id')
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!data) return false;
+  }
+
+  const current = ensureLocalStore();
+  const record = current.find((item) => item.id === id || item.case_code === id);
+  if (!record || !record.appointment_requested) return false;
+
+  record.preferred_time_slot = timeSlot;
+  saveLocalStore(current);
+  return true;
 }
 
 // 5. Agregar nota interna a un caso

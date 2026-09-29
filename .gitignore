@@ -25,6 +25,7 @@ out/
 dist/
 dist-ssr/
 *.local
+*.tsbuildinfo
 
 # Environment variables & secrets
 .env

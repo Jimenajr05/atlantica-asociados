@@ -1,5 +1,24 @@
 export type CaseStatus = 'nuevo' | 'en_analisis' | 'en_proceso' | 'finalizado';
-export type TimeSlot = 'manana' | 'tarde';
+export const APPOINTMENT_TIME_SLOTS = [
+  '07:00', '08:00', '09:00', '10:00', '11:00', '12:00',
+  '13:00', '14:00', '15:00', '16:00',
+] as const;
+export type LegacyTimeSlot = 'manana' | 'tarde';
+export type AppointmentTimePreference = TimeSlot | LegacyTimeSlot;
+
+export type TimeSlot = (typeof APPOINTMENT_TIME_SLOTS)[number];
+export type AppointmentStatus = 'pendiente' | 'confirmada' | 'cancelada';
+
+export interface AppointmentSlotAvailability {
+  available: boolean;
+  reserved: boolean;
+  manuallyAvailable: boolean;
+}
+
+export interface AppointmentDayAvailability {
+  date: string;
+  slots: Record<TimeSlot, AppointmentSlotAvailability>;
+}
 
 export interface CaseRecord {
   id: string;
@@ -12,8 +31,9 @@ export interface CaseRecord {
   description: string;
   privacy_accepted: boolean;
   appointment_requested: boolean;
+  appointment_status?: AppointmentStatus | null;
   preferred_date?: string | null;
-  preferred_time_slot?: TimeSlot | null;
+  preferred_time_slot?: AppointmentTimePreference | null;
   status: CaseStatus;
   internal_notes?: string | null;
   ip_address?: string | null;

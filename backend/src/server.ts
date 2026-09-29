@@ -11,6 +11,7 @@ import casesRouter from './routes/cases';
 import adminCasesRouter from './routes/admin-cases';
 import postsRouter from './routes/posts';
 import adminPostsRouter from './routes/admin-posts';
+import appointmentsRouter from './routes/appointments';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -54,6 +55,7 @@ app.get('/api/health', (_req: Request, res: Response) => {
 // Rutas de la API
 app.use('/api/cases', casesRouter);
 app.use('/api/admin/cases', adminCasesRouter);
+app.use('/api/appointments', appointmentsRouter);
 app.use('/api/posts', postsRouter);
 app.use('/api/admin/posts', adminPostsRouter);
 

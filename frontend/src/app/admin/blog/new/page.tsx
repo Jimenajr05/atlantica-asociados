@@ -11,7 +11,7 @@ export default function NewBlogPostPage() {
   const [title, setTitle] = useState('');
   const [excerpt, setExcerpt] = useState('');
   const [content, setContent] = useState('');
-  const [published, setPublished] = useState(false);
+  const [published, setPublished] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [previewTab, setPreviewTab] = useState<'editor' | 'preview'>('editor');
@@ -72,16 +72,16 @@ export default function NewBlogPostPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#fafafc] py-10">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-        <div className="flex items-center justify-between">
+    <div className="min-h-screen bg-[#fafafc] py-5 sm:py-10">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4 sm:space-y-6">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <Link
             href="/admin"
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-azul-rey hover:text-dorado transition-colors"
+            className="inline-flex max-w-full items-center gap-1.5 text-xs font-bold text-azul-rey transition-colors hover:text-dorado"
           >
             <ArrowLeft className="w-4 h-4" /> Volver al panel de administración
           </Link>
-          <span className="text-xs text-slate-500">Nuevo Artículo de Blog</span>
+          <span className="text-xs text-slate-500 sm:text-right">Nuevo Artículo de Blog</span>
         </div>
 
         {errorMessage && (
@@ -91,20 +91,20 @@ export default function NewBlogPostPage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 space-y-6 shadow-sm">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+        <form onSubmit={handleSubmit} className="space-y-5 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:space-y-6 sm:rounded-2xl sm:p-6 lg:p-8">
+          <div className="flex flex-col items-start gap-3 border-b border-slate-100 pb-4 sm:flex-row sm:items-center sm:justify-between">
             <h1 className="text-xl sm:text-2xl font-serif font-bold text-azul-rey">
               Crear Nuevo Artículo
             </h1>
-            <div className="flex items-center gap-3">
-              <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-700 select-none">
+            <div className="w-full sm:w-auto">
+              <label className="flex max-w-full items-start gap-2 text-xs font-bold leading-snug text-slate-700 select-none cursor-pointer sm:items-center">
                 <input
                   type="checkbox"
-                  checked={published}
-                  onChange={(e) => setPublished(e.target.checked)}
-                  className="rounded border-slate-300 text-azul-rey focus:ring-dorado"
+                  checked={!published}
+                  onChange={(e) => setPublished(!e.target.checked)}
+                  className="mt-0.5 shrink-0 rounded border-slate-300 text-azul-rey focus:ring-dorado sm:mt-0"
                 />
-                <span>Publicar inmediatamente</span>
+                <span className="min-w-0 break-words">Guardar como borrador</span>
               </label>
             </div>
           </div>
@@ -139,13 +139,13 @@ export default function NewBlogPostPage() {
 
             {/* Editor de contenido con vista previa */}
             <div className="border border-slate-300 rounded-xl overflow-hidden">
-              <div className="bg-slate-100 px-4 py-2 border-b border-slate-300 flex items-center justify-between">
+              <div className="flex flex-col items-start gap-2 border-b border-slate-300 bg-slate-100 px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4 sm:py-2">
                 <span className="text-xs font-bold text-slate-600">Contenido del artículo</span>
-                <div className="flex items-center gap-1 bg-white p-0.5 rounded-lg border border-slate-300">
+                <div className="flex w-full items-center gap-1 rounded-lg border border-slate-300 bg-white p-0.5 sm:w-auto">
                   <button
                     type="button"
                     onClick={() => handleTogglePreview('editor')}
-                    className={`px-3 py-1 rounded text-xs font-bold flex items-center gap-1 transition-colors ${
+                    className={`inline-flex flex-1 items-center justify-center gap-1 whitespace-nowrap rounded px-2.5 py-1 text-xs font-bold transition-colors sm:flex-none sm:px-3 ${
                       previewTab === 'editor' ? 'bg-azul-rey text-white' : 'text-slate-600 hover:bg-slate-100'
                     }`}
                   >
@@ -154,7 +154,7 @@ export default function NewBlogPostPage() {
                   <button
                     type="button"
                     onClick={() => handleTogglePreview('preview')}
-                    className={`px-3 py-1 rounded text-xs font-bold flex items-center gap-1 transition-colors ${
+                    className={`inline-flex flex-1 items-center justify-center gap-1 whitespace-nowrap rounded px-2.5 py-1 text-xs font-bold transition-colors sm:flex-none sm:px-3 ${
                       previewTab === 'preview' ? 'bg-azul-rey text-white' : 'text-slate-600 hover:bg-slate-100'
                     }`}
                   >
@@ -174,24 +174,24 @@ export default function NewBlogPostPage() {
                 />
               ) : (
                 <div
-                  className="p-6 prose prose-slate max-w-none min-h-[300px] bg-white text-sm"
+                  className="min-h-[300px] bg-white p-4 text-sm prose prose-slate max-w-none sm:p-6"
                   dangerouslySetInnerHTML={{ __html: previewHtml || '<p class="text-slate-400 italic">No hay contenido para previsualizar.</p>' }}
                 />
               )}
             </div>
           </div>
 
-          <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
+          <div className="flex flex-col-reverse gap-2 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-end sm:gap-3">
             <Link
               href="/admin"
-              className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+              className="inline-flex w-full items-center justify-center rounded-lg px-4 py-2.5 text-xs font-bold text-slate-600 transition-colors hover:bg-slate-100 sm:w-auto"
             >
               Cancelar
             </Link>
             <button
               type="submit"
               disabled={saving}
-              className="px-6 py-2.5 rounded-xl bg-azul-rey hover:bg-azul-rey-dark text-white font-bold text-xs shadow transition-colors flex items-center gap-1.5 disabled:opacity-60"
+              className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-azul-rey px-4 py-2.5 text-xs font-bold text-white shadow transition-colors hover:bg-azul-rey-dark disabled:opacity-60 sm:w-auto sm:px-6"
             >
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 text-dorado" />}
               <span>{published ? 'Guardar y Publicar' : 'Guardar como Borrador'}</span>
