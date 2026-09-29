@@ -5,6 +5,7 @@ import { BookOpen, Calendar, Clock, ArrowRight, MessageCircle } from 'lucide-rea
 import { getPublicPosts } from '@/lib/posts-store';
 import { BlogPost } from '@/types';
 import { COMPANY, WHATSAPP_URL } from '@/content/company';
+import { PageHero } from '@/components/PageHero';
 
 export const metadata: Metadata = {
   title: 'Blog y Guías Ciudadanas | ATLÁNTICA & ASOCIADOS',
@@ -32,19 +33,14 @@ export default async function BlogIndexPage({
   const paginatedPosts = posts.slice(startIndex, startIndex + postsPerPage);
 
   return (
-    <div className="space-y-12 sm:space-y-16 py-12 sm:py-16 bg-[#fafafc]">
-      {/* Encabezado */}
-      <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-4">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 text-azul-rey text-xs font-bold uppercase tracking-wider border border-slate-200">
-          <span>{COMPANY.tagline}</span>
-        </div>
-        <h1 className="text-3xl sm:text-5xl font-serif font-bold text-azul-rey">
-          Blog &amp; Guías Ciudadanas
-        </h1>
-        <p className="max-w-2xl mx-auto text-base text-slate-600 leading-relaxed">
-          Explicamos las leyes y los procedimientos administrativos de Costa Rica en lenguaje directo para que sepa exactamente qué exigir y cómo proceder.
-        </p>
-      </section>
+    <div className="space-y-10 sm:space-y-12 lg:space-y-16 pb-10 sm:pb-12 lg:pb-16 bg-[#fafafc]">
+      <PageHero
+        eyebrow={COMPANY.tagline}
+        title="Blog & Guías Ciudadanas"
+        description="Explicamos las leyes y los procedimientos administrativos de Costa Rica en lenguaje directo para que sepa exactamente qué exigir y cómo proceder."
+        asideValue={String(totalPosts).padStart(2, '0')}
+        asideLabel={totalPosts === 1 ? 'artículo publicado' : 'artículos publicados'}
+      />
 
       {/* Listado de Artículos */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

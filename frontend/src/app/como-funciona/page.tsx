@@ -13,6 +13,7 @@ import {
   HelpCircle,
 } from 'lucide-react';
 import { COMPANY, WHATSAPP_URL } from '@/content/company';
+import { PageHero } from '@/components/PageHero';
 
 export const metadata: Metadata = {
   title: 'Cómo Funciona Nuestro Servicio de Gestión y Redacción',
@@ -22,19 +23,14 @@ export const metadata: Metadata = {
 
 export default function ComoFuncionaPage() {
   return (
-    <div className="space-y-16 sm:space-y-20 py-12 sm:py-16">
-      {/* Cabecera */}
-      <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-4">
-        <span className="text-xs font-bold tracking-widest uppercase text-dorado-muted block">
-          Metodología Transparente
-        </span>
-        <h1 className="text-3xl sm:text-5xl font-serif font-bold text-azul-rey">
-          ¿Cómo funciona nuestro servicio?
-        </h1>
-        <p className="max-w-2xl mx-auto text-base sm:text-lg text-slate-600 leading-relaxed">
-          Diseñamos un proceso en cuatro pasos claros, sin enredos jurídicos ni trámites complicados, pensado para personas ocupadas y preocupadas.
-        </p>
-      </section>
+    <div className="space-y-12 sm:space-y-16 lg:space-y-20 pb-12 sm:pb-16 lg:pb-20">
+      <PageHero
+        eyebrow="Metodología transparente"
+        title="¿Cómo funciona nuestro servicio?"
+        description="Diseñamos un proceso en cuatro pasos claros, sin enredos jurídicos ni trámites complicados, pensado para personas ocupadas y preocupadas."
+        asideValue="04"
+        asideLabel="pasos de atención"
+      />
 
       {/* Los 4 Pasos Detallados */}
       <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">

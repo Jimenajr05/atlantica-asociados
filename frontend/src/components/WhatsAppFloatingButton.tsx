@@ -9,7 +9,7 @@ export function WhatsAppFloatingButton() {
   const pathname = usePathname();
   const [showTooltip, setShowTooltip] = useState(true);
 
-  if (pathname?.startsWith('/admin')) {
+  if (pathname === '/' || pathname?.startsWith('/admin')) {
     return null;
   }
 

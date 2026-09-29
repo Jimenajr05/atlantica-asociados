@@ -78,8 +78,8 @@ export const metadata: Metadata = {
     images: ['/assets/logo.jpg'],
   },
   icons: {
-    icon: '/assets/logo.jpg',
-    apple: '/assets/logo.jpg',
+    icon: '/assets/logo-icono.png',
+    apple: '/assets/logo-icono.png',
   },
 };
 

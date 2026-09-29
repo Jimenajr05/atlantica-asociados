@@ -4,15 +4,12 @@ import Image from 'next/image';
 import {
   MessageCircle,
   FileCheck2,
-  ShieldCheck,
-  Clock,
   ArrowRight,
   BookOpen,
   Building2,
   Hospital,
   Scale,
   FileText,
-  CheckCircle2,
 } from 'lucide-react';
 import { COMPANY, WHATSAPP_URL } from '@/content/company';
 import { SERVICES } from '@/content/services';
@@ -46,9 +43,9 @@ export default async function HomePage() {
           <div className="absolute inset-0 bg-gradient-to-t from-[#0b0f19] via-[#0b0f19]/65 to-[#0b0f19]/35" />
         </div>
 
-        <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 text-center space-y-7">
+        <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-24 text-center space-y-6 sm:space-y-7">
           {/* Logotipo distintivo idéntico a la imagen de referencia */}
-          <div className="flex flex-col items-center justify-center text-center space-y-1 mb-2 select-none">
+          <div className="hidden sm:flex flex-col items-center justify-center text-center space-y-1 mb-2 select-none">
             <span className="font-serif text-2xl sm:text-4xl lg:text-5xl tracking-[0.22em] text-dorado font-bold uppercase drop-shadow-md">
               ATLÁNTICA
             </span>
@@ -64,7 +61,7 @@ export default async function HomePage() {
           </div>
 
           {/* Título Principal de la landing */}
-          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.15] max-w-4xl mx-auto text-white">
+          <h1 className="text-[2rem] sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.08] sm:leading-[1.15] max-w-4xl mx-auto text-white">
             ¿Le violaron sus derechos y no sabe qué hacer?{' '}
             <span className="text-dorado block mt-2 font-bold">
               Le ayudamos a dar el primer paso
@@ -77,15 +74,18 @@ export default async function HomePage() {
           </p>
 
           {/* Botones de acción principales */}
-          <div className="pt-3 flex flex-col sm:flex-row items-center justify-center gap-4 max-w-md mx-auto sm:max-w-none">
+          <div className="pt-1 sm:pt-3 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 max-w-md mx-auto sm:max-w-none">
             <a
               href={WHATSAPP_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-[#25D366] hover:bg-[#20ba59] text-white px-7 py-3.5 rounded-xl font-bold text-base shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-[#25D366] hover:bg-[#20ba59] text-white px-5 sm:px-7 py-3.5 rounded-xl font-bold text-base shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5"
             >
               <MessageCircle className="w-5 h-5 fill-white" />
-              <span>Chatear por WhatsApp ({COMPANY.phoneDisplay})</span>
+              <span className="flex flex-col items-start sm:flex-row sm:items-center gap-0.5 sm:gap-2">
+                <span>Chatear por WhatsApp</span>
+                <span className="text-xs sm:text-sm font-semibold text-white/90">{COMPANY.phoneDisplay}</span>
+              </span>
             </a>
 
             <Link
@@ -97,21 +97,6 @@ export default async function HomePage() {
             </Link>
           </div>
 
-          {/* Garantías de atención */}
-          <div className="pt-6 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-slate-300 max-w-2xl mx-auto border-t border-white/10">
-            <div className="flex items-center justify-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-dorado flex-shrink-0" />
-              <span>Atención strictly confidencial</span>
-            </div>
-            <div className="flex items-center justify-center gap-2">
-              <Clock className="w-4 h-4 text-dorado flex-shrink-0" />
-              <span>Lunes a viernes de 7:00 a.m. a 5:00 p.m.</span>
-            </div>
-            <div className="flex items-center justify-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-dorado flex-shrink-0" />
-              <span>Trámites 100% digitales sin traslados</span>
-            </div>
-          </div>
         </div>
       </section>
 
