@@ -1,5 +1,4 @@
 import { CaseRecord, CaseStatus, CaseNoteRecord } from '@/types';
-import { SAMPLE_CASES } from '@/content/sample-cases';
 
 const BACKEND_URL = process.env.BACKEND_URL || 'http://127.0.0.1:5000';
 
@@ -16,10 +15,10 @@ export async function getAllCases(): Promise<CaseRecord[]> {
       }
     }
   } catch (err) {
-    console.warn('[FRONTEND] Backend no disponible para getAllCases(), usando datos de muestra:', err);
+    console.warn('[FRONTEND] Backend no disponible para getAllCases():', err);
   }
 
-  return SAMPLE_CASES;
+  return [];
 }
 
 // 2. Actualizar estado de caso

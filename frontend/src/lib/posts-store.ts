@@ -1,5 +1,4 @@
 import { BlogPost } from '@/types';
-import { INITIAL_POSTS } from '@/content/initial-posts';
 
 const BACKEND_URL = process.env.BACKEND_URL || 'http://127.0.0.1:5000';
 
@@ -11,7 +10,7 @@ export async function getAllPosts(): Promise<BlogPost[]> {
     });
     if (res.ok) {
       const data = await res.json();
-      if (Array.isArray(data.posts) && data.posts.length > 0) {
+      if (Array.isArray(data.posts)) {
         return data.posts;
       }
     }
@@ -19,7 +18,7 @@ export async function getAllPosts(): Promise<BlogPost[]> {
     console.warn('[FRONTEND] Backend no disponible para getAllPosts(), usando datos iniciales:', err);
   }
 
-  return INITIAL_POSTS;
+  return [];
 }
 
 // 2. Obtener artículos públicos para Blog y SEO
@@ -35,10 +34,10 @@ export async function getPublicPosts(): Promise<BlogPost[]> {
       }
     }
   } catch (err) {
-    console.warn('[FRONTEND] Backend no disponible para getPublicPosts(), usando datos iniciales:', err);
+    console.warn('[FRONTEND] Backend no disponible para getPublicPosts():', err);
   }
 
-  return INITIAL_POSTS.filter((p) => p.published);
+  return [];
 }
 
 // 3. Obtener un artículo por su slug
@@ -54,11 +53,10 @@ export async function getPostBySlug(slug: string): Promise<BlogPost | null> {
       }
     }
   } catch (err) {
-    console.warn('[FRONTEND] Backend no disponible para getPostBySlug, buscando en locales:', err);
+    console.warn('[FRONTEND] Backend no disponible para getPostBySlug:', err);
   }
 
-  const found = INITIAL_POSTS.find((p) => p.slug === slug);
-  return found || null;
+  return null;
 }
 
 // 4. Obtener un artículo por ID
@@ -77,6 +75,5 @@ export async function getPostById(id: string): Promise<BlogPost | null> {
     console.warn('[FRONTEND] Backend no disponible para getPostById:', err);
   }
 
-  const found = INITIAL_POSTS.find((p) => p.id === id || p.slug === id);
-  return found || null;
+  return null;
 }

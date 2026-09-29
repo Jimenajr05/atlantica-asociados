@@ -52,7 +52,6 @@ Desde la raíz del repositorio:
 | `npm run dev:backend` | Ejecuta únicamente el servidor backend con recarga automática |
 | `npm run dev:frontend` | Ejecuta únicamente el cliente web Next.js |
 | `npm run build` | Compila tanto el backend (`tsc`) como el frontend (`next build`) |
-| `npm run seed` | Siembra los datos de ejemplo iniciales en Supabase o almacén local |
 
 ---
 
@@ -130,7 +129,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=placeholder-anon-key
 ### 2. Base de Datos en Supabase (Opcional)
 1. En [supabase.com](https://supabase.com), abra el **SQL Editor**.
 2. Ejecute el script [`backend/supabase/migrations/001_initial_schema.sql`](backend/supabase/migrations/001_initial_schema.sql).
-3. Siembre los datos iniciales con `npm run seed`.
+3. Publique los artículos reales desde el panel de administración.
 
 ---
 

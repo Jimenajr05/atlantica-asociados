@@ -48,7 +48,7 @@ export async function getAllPosts(): Promise<BlogPost[]> {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (!error && data && data.length > 0) {
+      if (!error && data) {
         saveLocalStore(data as BlogPost[]);
         return data as BlogPost[];
       }
@@ -71,7 +71,8 @@ export async function getPublicPosts(): Promise<BlogPost[]> {
         .eq('published', true)
         .order('published_at', { ascending: false });
 
-      if (!error && data && data.length > 0) {
+      if (!error && data) {
+        saveLocalStore(data as BlogPost[]);
         return data as BlogPost[];
       }
     } catch (e) {

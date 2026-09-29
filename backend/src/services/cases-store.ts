@@ -52,7 +52,7 @@ export async function getAllCases(): Promise<CaseRecord[]> {
         `)
         .order('created_at', { ascending: false });
 
-      if (!error && data && data.length > 0) {
+      if (!error && data) {
         saveLocalStore(data as CaseRecord[]);
         return data as CaseRecord[];
       }

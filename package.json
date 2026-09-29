@@ -11,7 +11,6 @@
     "build": "npm run build --prefix backend && npm run build --prefix frontend",
     "start:backend": "npm run start --prefix backend",
     "start:frontend": "npm run start --prefix frontend",
-    "seed": "npm run seed --prefix backend",
     "install:all": "npm install && npm install --prefix backend && npm install --prefix frontend"
   },
   "devDependencies": {
