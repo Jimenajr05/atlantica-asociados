@@ -14,7 +14,6 @@ export default function EditBlogPostPage() {
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
   const [excerpt, setExcerpt] = useState('');
-  const [metaDescription, setMetaDescription] = useState('');
   const [content, setContent] = useState('');
   const [published, setPublished] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -32,7 +31,6 @@ export default function EditBlogPostPage() {
           setTitle(data.post.title || '');
           setSlug(data.post.slug || '');
           setExcerpt(data.post.excerpt || '');
-          setMetaDescription(data.post.meta_description || '');
           setContent(data.post.content || '');
           setPublished(Boolean(data.post.published));
         }
@@ -59,8 +57,8 @@ export default function EditBlogPostPage() {
     e.preventDefault();
     setErrorMessage(null);
 
-    if (!title.trim() || !slug.trim() || !content.trim()) {
-      setErrorMessage('Por favor complete los campos obligatorios: Título, Slug URL y Contenido en Markdown.');
+    if (!title.trim() || !content.trim()) {
+      setErrorMessage('Por favor complete el título y el contenido del artículo.');
       return;
     }
 
@@ -73,7 +71,6 @@ export default function EditBlogPostPage() {
           title,
           slug,
           excerpt,
-          meta_description: metaDescription || excerpt,
           content,
           published,
         }),
@@ -150,38 +147,6 @@ export default function EditBlogPostPage() {
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Slug URL <span className="text-red-500">*</span>
-                </label>
-                <div className="flex items-center">
-                  <span className="text-xs text-slate-400 bg-slate-100 px-3 py-2.5 rounded-l-xl border border-r-0 border-slate-300">
-                    /blog/
-                  </span>
-                  <input
-                    type="text"
-                    required
-                    value={slug}
-                    onChange={(e) => setSlug(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-r-xl border border-slate-300 text-xs font-mono focus:border-azul-rey focus:ring-1 focus:ring-azul-rey"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Meta Descripción SEO
-                </label>
-                <input
-                  type="text"
-                  value={metaDescription}
-                  onChange={(e) => setMetaDescription(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs focus:border-azul-rey focus:ring-1 focus:ring-azul-rey"
-                />
-              </div>
-            </div>
-
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
                 Resumen / Extracto
@@ -194,10 +159,10 @@ export default function EditBlogPostPage() {
               />
             </div>
 
-            {/* Editor de Markdown con Vista Previa */}
+            {/* Editor de contenido con vista previa */}
             <div className="border border-slate-300 rounded-xl overflow-hidden">
               <div className="bg-slate-100 px-4 py-2 border-b border-slate-300 flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-600">Contenido en Markdown</span>
+                <span className="text-xs font-bold text-slate-600">Contenido del artículo</span>
                 <div className="flex items-center gap-1 bg-white p-0.5 rounded-lg border border-slate-300">
                   <button
                     type="button"

@@ -51,7 +51,7 @@ function AdminDashboardContent() {
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<'cases' | 'blog'>('cases');
   const [loading, setLoading] = useState(true);
-  const [userEmail, setUserEmail] = useState<string>('admin@atlanticayasociados.com');
+  const [userEmail, setUserEmail] = useState<string>('');
 
   // Estados de Casos
   const [cases, setCases] = useState<CaseRecord[]>([]);
@@ -122,7 +122,7 @@ function AdminDashboardContent() {
       const casesRes = await fetch('/api/admin/cases');
       if (casesRes.ok) {
         const casesData = await casesRes.json();
-        if (casesData.cases && casesData.cases.length > 0) {
+        if (Array.isArray(casesData.cases)) {
           setCases(casesData.cases as CaseRecord[]);
         }
       }
@@ -131,7 +131,7 @@ function AdminDashboardContent() {
       const supabase = createClient();
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
-        setUserEmail(session.user.email || 'admin@atlanticayasociados.com');
+        setUserEmail(session.user.email || '');
       }
     } catch {
       // Fallback amigable
@@ -353,7 +353,7 @@ function AdminDashboardContent() {
       )}
 
       {/* Barra superior de administración */}
-      <nav className="bg-negro text-white border-b border-slate-800 px-4 sm:px-8 py-3.5 flex flex-wrap justify-between items-center gap-4">
+      <nav className="sticky top-0 z-30 bg-[#0b1522] text-white border-b border-white/10 px-4 sm:px-8 py-3.5 flex flex-wrap justify-between items-center gap-4 shadow-sm">
         <div className="flex items-center gap-3">
           <span className="font-serif font-bold text-base tracking-widest text-white">
             ATLÁNTICA
@@ -381,16 +381,32 @@ function AdminDashboardContent() {
       </nav>
 
       {/* Contenedor Principal */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-10 py-7 sm:py-9 space-y-8">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <span className="text-[11px] font-bold uppercase text-slate-500">Administración / Atlántica &amp; Asociados</span>
+            <h1 className="mt-1 text-2xl sm:text-3xl font-serif font-bold text-slate-900">Centro de gestión</h1>
+            <p className="mt-1 text-sm text-slate-500">Seguimiento de expedientes y publicaciones.</p>
+          </div>
+          <button
+            onClick={checkSessionAndFetchData}
+            className="inline-flex items-center justify-center gap-2 self-start sm:self-auto rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-700 shadow-sm transition-colors hover:bg-slate-50 hover:text-azul-rey"
+            title="Recargar datos"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            Actualizar
+          </button>
+        </div>
+
         {/* Pestañas de Navegación del Panel */}
-        <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between gap-3 border-b border-slate-200 pb-3">
+          <div className="inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
             <button
               onClick={() => setActiveTab('cases')}
-              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all ${
+              className={`shrink-0 px-3.5 sm:px-4 py-2.5 rounded-lg text-xs sm:text-sm font-bold flex items-center gap-2 transition-all ${
                 activeTab === 'cases'
                   ? 'bg-azul-rey text-white shadow-sm'
-                  : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+                  : 'text-slate-600 hover:bg-slate-50'
               }`}
             >
               <FileCheck className="w-4 h-4 text-dorado" />
@@ -398,10 +414,10 @@ function AdminDashboardContent() {
             </button>
             <button
               onClick={() => setActiveTab('blog')}
-              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all ${
+              className={`shrink-0 px-3.5 sm:px-4 py-2.5 rounded-lg text-xs sm:text-sm font-bold flex items-center gap-2 transition-all ${
                 activeTab === 'blog'
                   ? 'bg-azul-rey text-white shadow-sm'
-                  : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+                  : 'text-slate-600 hover:bg-slate-50'
               }`}
             >
               <BookOpen className="w-4 h-4 text-dorado" />
@@ -409,14 +425,6 @@ function AdminDashboardContent() {
             </button>
           </div>
 
-          <button
-            onClick={checkSessionAndFetchData}
-            className="p-2 text-slate-600 hover:text-azul-rey bg-white rounded-lg border border-slate-200 shadow-sm text-xs font-semibold flex items-center gap-1.5"
-            title="Recargar datos"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Actualizar</span>
-          </button>
         </div>
 
         {/* ====================================================================
@@ -426,23 +434,23 @@ function AdminDashboardContent() {
           <div className="space-y-6">
             {/* Contadores y Métricas */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-white p-4 rounded-xl border border-slate-200/90 shadow-sm">
+              <div className="bg-white p-5 rounded-xl border border-slate-200 border-l-4 border-l-azul-rey shadow-sm">
                 <span className="text-[11px] text-slate-500 uppercase tracking-wider block font-bold">Total Casos</span>
                 <span className="text-2xl font-bold text-azul-rey">{cases.length}</span>
               </div>
-              <div className="bg-white p-4 rounded-xl border border-slate-200/90 shadow-sm">
+              <div className="bg-white p-5 rounded-xl border border-slate-200 border-l-4 border-l-blue-500 shadow-sm">
                 <span className="text-[11px] text-blue-600 uppercase tracking-wider block font-bold">Nuevos</span>
                 <span className="text-2xl font-bold text-blue-700">
                   {cases.filter((c) => c.status === 'nuevo').length}
                 </span>
               </div>
-              <div className="bg-white p-4 rounded-xl border border-slate-200/90 shadow-sm">
+              <div className="bg-white p-5 rounded-xl border border-slate-200 border-l-4 border-l-amber-500 shadow-sm">
                 <span className="text-[11px] text-amber-600 uppercase tracking-wider block font-bold">Citas Solicitadas</span>
                 <span className="text-2xl font-bold text-amber-700">
                   {cases.filter((c) => c.appointment_requested).length}
                 </span>
               </div>
-              <div className="bg-white p-4 rounded-xl border border-slate-200/90 shadow-sm">
+              <div className="bg-white p-5 rounded-xl border border-slate-200 border-l-4 border-l-emerald-600 shadow-sm">
                 <span className="text-[11px] text-purple-600 uppercase tracking-wider block font-bold">En Proceso / Análisis</span>
                 <span className="text-2xl font-bold text-purple-700">
                   {cases.filter((c) => c.status === 'en_proceso' || c.status === 'en_analisis').length}
@@ -451,7 +459,7 @@ function AdminDashboardContent() {
             </div>
 
             {/* Barra de Filtros y Búsqueda */}
-            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div className="bg-white p-4 sm:p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
               <div className="relative w-full md:w-80">
                 <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5 pointer-events-none" />
                 <input
@@ -498,7 +506,7 @@ function AdminDashboardContent() {
             {/* Tabla de Casos */}
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs text-slate-700">
+                <table className="min-w-[900px] w-full text-left text-xs text-slate-700">
                   <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase font-bold text-[11px]">
                     <tr>
                       <th className="py-3.5 px-4">Código / Fecha</th>
@@ -589,7 +597,7 @@ function AdminDashboardContent() {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-bold text-azul-rey font-serif">Artículos del Blog</h2>
-                <p className="text-xs text-slate-500">Cree, edite y publique guías en formato Markdown</p>
+                <p className="text-xs text-slate-500">Cree, edite y publique artículos para el sitio.</p>
               </div>
 
               <Link
@@ -602,24 +610,27 @@ function AdminDashboardContent() {
             </div>
 
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-              <table className="w-full text-left text-xs text-slate-700">
+              <div className="overflow-x-auto">
+              <table className="min-w-[640px] w-full text-left text-xs text-slate-700">
                 <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase font-bold text-[11px]">
                   <tr>
                     <th className="py-3.5 px-4">Título</th>
-                    <th className="py-3.5 px-4">Slug</th>
                     <th className="py-3.5 px-4">Estado</th>
                     <th className="py-3.5 px-4">Fecha</th>
                     <th className="py-3.5 px-4 text-right">Acciones</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200">
-                  {posts.map((post) => (
+                  {posts.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-14 text-center text-sm text-slate-500">
+                        Aún no hay artículos en el blog.
+                      </td>
+                    </tr>
+                  ) : posts.map((post) => (
                     <tr key={post.id} className="hover:bg-slate-50">
                       <td className="py-3.5 px-4 font-bold text-slate-900 max-w-sm">
                         {post.title}
-                      </td>
-                      <td className="py-3.5 px-4 font-mono text-slate-500 text-[11px]">
-                        /{post.slug}
                       </td>
                       <td className="py-3.5 px-4">
                         <button
@@ -636,34 +647,37 @@ function AdminDashboardContent() {
                       <td className="py-3.5 px-4 text-slate-500">
                         {new Date(post.created_at).toLocaleDateString('es-CR')}
                       </td>
-                      <td className="py-3.5 px-4 text-right space-x-1.5">
-                        <Link
-                          href={`/blog/${post.slug}`}
-                          target="_blank"
-                          className="p-1.5 text-slate-400 hover:text-azul-rey inline-block rounded hover:bg-slate-100"
-                          title="Ver en el sitio"
-                        >
-                          <ExternalLink className="w-3.5 h-3.5" />
-                        </Link>
-                        <Link
-                          href={`/admin/blog/${post.id}/edit`}
-                          className="p-1.5 text-slate-400 hover:text-dorado-muted inline-block rounded hover:bg-slate-100"
-                          title="Editar"
-                        >
-                          <Edit className="w-3.5 h-3.5" />
-                        </Link>
-                        <button
-                          onClick={() => promptDeletePost(post)}
-                          className="p-1.5 text-slate-400 hover:text-red-600 inline-block rounded hover:bg-red-50"
-                          title="Eliminar"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                      <td className="py-3.5 px-4">
+                        <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
+                          <Link
+                            href={`/blog/${post.slug}`}
+                            target="_blank"
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-slate-100 hover:text-azul-rey"
+                            title="Ver en el sitio"
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                          </Link>
+                          <Link
+                            href={`/admin/blog/${post.id}/edit`}
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-amber-50 hover:text-amber-700"
+                            title="Editar"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Link>
+                          <button
+                            onClick={() => promptDeletePost(post)}
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
+                            title="Eliminar"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+              </div>
             </div>
           </div>
         )}

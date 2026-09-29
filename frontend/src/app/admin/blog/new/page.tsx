@@ -9,22 +9,13 @@ import { parseAndSanitizeMarkdown } from '@/lib/markdown';
 export default function NewBlogPostPage() {
   const router = useRouter();
   const [title, setTitle] = useState('');
-  const [slug, setSlug] = useState('');
   const [excerpt, setExcerpt] = useState('');
-  const [metaDescription, setMetaDescription] = useState('');
   const [content, setContent] = useState('');
   const [published, setPublished] = useState(false);
   const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [previewTab, setPreviewTab] = useState<'editor' | 'preview'>('editor');
   const [previewHtml, setPreviewHtml] = useState('');
-
-  const handleTitleChange = (val: string) => {
-    setTitle(val);
-    if (!slug || slug === generateSlug(title)) {
-      setSlug(generateSlug(val));
-    }
-  };
 
   const generateSlug = (text: string) => {
     return text
@@ -47,8 +38,9 @@ export default function NewBlogPostPage() {
     e.preventDefault();
     setErrorMessage(null);
 
-    if (!title.trim() || !slug.trim() || !content.trim()) {
-      setErrorMessage('Por favor complete los campos obligatorios: Título, Slug URL y Contenido en Markdown.');
+    const slug = generateSlug(title);
+    if (!title.trim() || !slug || !content.trim()) {
+      setErrorMessage('Por favor complete el título y el contenido del artículo.');
       return;
     }
 
@@ -61,7 +53,6 @@ export default function NewBlogPostPage() {
           title,
           slug,
           excerpt,
-          meta_description: metaDescription || excerpt,
           content,
           published,
         }),
@@ -127,44 +118,10 @@ export default function NewBlogPostPage() {
                 type="text"
                 required
                 value={title}
-                onChange={(e) => handleTitleChange(e.target.value)}
+                onChange={(e) => setTitle(e.target.value)}
                 placeholder="Ej. Guía práctica para trámites ante el Ministerio de Salud"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:border-azul-rey focus:ring-1 focus:ring-azul-rey"
               />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Slug URL amigable <span className="text-red-500">*</span>
-                </label>
-                <div className="flex items-center">
-                  <span className="text-xs text-slate-400 bg-slate-100 px-3 py-2.5 rounded-l-xl border border-r-0 border-slate-300">
-                    /blog/
-                  </span>
-                  <input
-                    type="text"
-                    required
-                    value={slug}
-                    onChange={(e) => setSlug(e.target.value)}
-                    placeholder="guia-tramites-ministerio-salud"
-                    className="w-full px-3 py-2.5 rounded-r-xl border border-slate-300 text-xs font-mono focus:border-azul-rey focus:ring-1 focus:ring-azul-rey"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Meta Descripción SEO
-                </label>
-                <input
-                  type="text"
-                  value={metaDescription}
-                  onChange={(e) => setMetaDescription(e.target.value)}
-                  placeholder="Resumen para motores de búsqueda..."
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:border-azul-rey focus:ring-1 focus:ring-azul-rey"
-                />
-              </div>
             </div>
 
             <div>
@@ -180,10 +137,10 @@ export default function NewBlogPostPage() {
               />
             </div>
 
-            {/* Editor de Markdown con Vista Previa */}
+            {/* Editor de contenido con vista previa */}
             <div className="border border-slate-300 rounded-xl overflow-hidden">
               <div className="bg-slate-100 px-4 py-2 border-b border-slate-300 flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-600">Contenido en Markdown</span>
+                <span className="text-xs font-bold text-slate-600">Contenido del artículo</span>
                 <div className="flex items-center gap-1 bg-white p-0.5 rounded-lg border border-slate-300">
                   <button
                     type="button"
@@ -212,7 +169,7 @@ export default function NewBlogPostPage() {
                   required
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
-                  placeholder="Escriba el contenido usando formato Markdown (## Título, - Listas, > Citas)..."
+                  placeholder="Escriba aquí el texto de su artículo..."
                   className="w-full p-4 font-mono text-xs focus:outline-none leading-relaxed text-slate-800"
                 />
               ) : (

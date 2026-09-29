@@ -23,7 +23,7 @@ router.get('/', async (_req: Request, res: Response): Promise<void> => {
 router.post('/', async (req: Request, res: Response): Promise<void> => {
   try {
     const body = req.body || {};
-    const { title, slug, excerpt, content, meta_description, published } = body;
+    const { title, slug, excerpt, content, published } = body;
 
     if (!title || !slug || !content) {
       res.status(400).json({ error: 'Título, slug y contenido en Markdown son obligatorios.' });
@@ -34,7 +34,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
       title: title.trim(),
       slug: slug.trim().toLowerCase(),
       excerpt: excerpt?.trim() || '',
-      meta_description: meta_description?.trim() || excerpt?.trim() || '',
+      meta_description: excerpt?.trim() || '',
       content,
       published: Boolean(published),
     });
@@ -67,14 +67,14 @@ router.put('/:id', async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
     const body = req.body || {};
-    const { title, slug, excerpt, content, meta_description, published } = body;
+    const { title, slug, excerpt, content, published } = body;
 
     const updated = await updatePost(id, {
       title,
       slug,
       excerpt,
       content,
-      meta_description,
+      meta_description: excerpt?.trim() || '',
       published: Boolean(published),
     });
 
