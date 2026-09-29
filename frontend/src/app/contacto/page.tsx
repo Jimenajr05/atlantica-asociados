@@ -1,7 +1,6 @@
 import React from 'react';
 import type { Metadata } from 'next';
 import {
-  MessageCircle,
   Mail,
   Clock,
   ShieldCheck,
@@ -13,6 +12,7 @@ import {
 } from 'lucide-react';
 import { COMPANY, WHATSAPP_URL } from '@/content/company';
 import { CaseForm } from '@/components/CaseForm';
+import { PageHero } from '@/components/PageHero';
 
 export const metadata: Metadata = {
   title: 'Contacto y Consulta | ATLÁNTICA & ASOCIADOS',
@@ -22,19 +22,14 @@ export const metadata: Metadata = {
 
 export default function ContactoPage() {
   return (
-    <div className="space-y-12 sm:space-y-16 py-12 sm:py-16 bg-[#fafafc]">
-      {/* Encabezado */}
-      <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-3">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 text-azul-rey text-xs font-bold uppercase tracking-wider border border-slate-200">
-          <span>{COMPANY.tagline}</span>
-        </div>
-        <h1 className="text-3xl sm:text-5xl font-serif font-bold text-azul-rey">
-          Contáctenos y Cuéntenos su Caso
-        </h1>
-        <p className="max-w-2xl mx-auto text-sm sm:text-base text-slate-600 leading-relaxed">
-          {COMPANY.purpose}
-        </p>
-      </section>
+    <div className="space-y-10 sm:space-y-12 lg:space-y-16 pb-10 sm:pb-12 lg:pb-16 bg-[#fafafc]">
+      <PageHero
+        eyebrow={COMPANY.tagline}
+        title="Contáctenos y Cuéntenos su Caso"
+        description={COMPANY.purpose}
+        asideValue={COMPANY.phoneDisplay}
+        asideLabel="línea directa"
+      />
 
       {/* Grid: Información de contacto lateral + Formulario principal */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -42,31 +37,34 @@ export default function ContactoPage() {
           {/* Columna lateral: Canales directos e información (4 columnas) */}
           <div className="lg:col-span-4 space-y-5">
             {/* Tarjeta WhatsApp Principal */}
-            <div className="bg-azul-rey rounded-2xl p-6 sm:p-7 text-white shadow-sm space-y-4">
-              <div className="w-11 h-11 rounded-xl bg-white/10 flex items-center justify-center">
-                <MessageCircle className="w-6 h-6 text-[#25D366]" />
-              </div>
-              <div>
-                <span className="text-[11px] font-bold uppercase tracking-wider text-dorado">
-                  Canal Principal Directo
+            <div className="overflow-hidden rounded-2xl border border-slate-200 border-t-4 border-t-dorado bg-white shadow-md">
+              <div className="bg-azul-rey px-7 pt-7 pb-6 text-white">
+                <span className="text-[11px] font-bold uppercase text-dorado">
+                  Canal principal directo
                 </span>
-                <h2 className="text-xl font-bold text-white mt-0.5">
+                <h2 className="mt-3 text-2xl font-serif font-bold text-white">
                   WhatsApp Oficial
                 </h2>
-                <p className="text-xs text-slate-200 mt-1 leading-relaxed">
+                <p className="mt-2 text-sm text-slate-200 leading-relaxed">
                   Para consultas rápidas, envío de fotografías de documentos o coordinación de citas.
                 </p>
               </div>
 
-              <div className="pt-1">
+              <div className="px-7 py-6">
+                <span className="block text-[10px] font-bold uppercase text-slate-500">
+                  Número de contacto
+                </span>
+                <span className="mt-1 block text-2xl font-semibold font-mono text-azul-rey">
+                  {COMPANY.phoneDisplay}
+                </span>
                 <a
                   href={WHATSAPP_URL}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full inline-flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20ba59] text-white px-5 py-3 rounded-xl font-bold text-sm shadow transition-colors"
+                  aria-label={`Escribir por WhatsApp al ${COMPANY.phoneDisplay}`}
+                  className="mt-5 inline-flex w-full items-center justify-center rounded-lg bg-[#117449] px-5 py-3.5 text-sm font-bold text-white transition-colors hover:bg-[#0d603c] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-azul-rey"
                 >
-                  <MessageCircle className="w-4 h-4 fill-white" />
-                  <span>Escribir al {COMPANY.phoneDisplay}</span>
+                  Iniciar conversación
                 </a>
               </div>
             </div>
@@ -83,8 +81,8 @@ export default function ContactoPage() {
                   <div>
                     <strong className="block text-slate-900">Líneas Telefónicas:</strong>
                     <div className="font-mono text-xs font-bold text-azul-rey space-y-0.5 mt-0.5">
-                      <div>6002-4545 (Principal / WhatsApp)</div>
-                      <div>8451-1030 (Línea Directa)</div>
+                      <div>6002-4545 (Principal)</div>
+                      <div>8451-1030 </div>
                     </div>
                   </div>
                 </div>

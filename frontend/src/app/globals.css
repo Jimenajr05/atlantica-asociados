@@ -60,3 +60,23 @@
   border-color: #cbd5e1;
   box-shadow: 0 6px 16px rgba(22, 54, 100, 0.08);
 }
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Ocultar scrollbar pero mantener funcionalidad de scroll */
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}

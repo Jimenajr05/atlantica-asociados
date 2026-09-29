@@ -1,40 +1,154 @@
-import React from 'react';
-import type { Metadata } from 'next';
+'use client';
+
+import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { MessageCircle, FileText, CheckCircle2, Phone, Receipt } from 'lucide-react';
+import { MessageCircle, FileText, Search, X } from 'lucide-react';
 import { SERVICES } from '@/content/services';
 import { ServiceCard } from '@/components/ServiceCard';
+import { PageHero } from '@/components/PageHero';
 import { COMPANY, WHATSAPP_URL } from '@/content/company';
 
-export const metadata: Metadata = {
-  title: 'Nuestros 17 Servicios | ATLÁNTICA & ASOCIADOS - Poder y Estrategia',
-  description:
-    'Catálogo completo de 17 servicios de asesoría, gestión institucional, redacción técnica, acompañamiento ciudadano y apoyo en proyectos comunitarios en Costa Rica.',
-};
+// All unique badges for filter chips
+const ALL_BADGES = Array.from(new Set(SERVICES.map((s) => s.badge)));
 
 export default function ServiciosPage() {
+  const [query, setQuery] = useState('');
+  const [activeFilter, setActiveFilter] = useState<string | null>(null);
+
+  const filtered = useMemo(() => {
+    const q = query.toLowerCase().trim();
+    return SERVICES.filter((s) => {
+      const matchesQuery =
+        !q ||
+        s.title.toLowerCase().includes(q) ||
+        s.summary.toLowerCase().includes(q) ||
+        s.badge.toLowerCase().includes(q) ||
+        s.description.toLowerCase().includes(q) ||
+        s.whenToUse.some((w) => w.toLowerCase().includes(q)) ||
+        s.whatWeDeliver.some((w) => w.toLowerCase().includes(q));
+
+      const matchesFilter = !activeFilter || s.badge === activeFilter;
+      return matchesQuery && matchesFilter;
+    });
+  }, [query, activeFilter]);
+
   return (
-    <div className="space-y-16 py-12 sm:py-16 bg-[#fafafc]">
-      {/* Cabecera de Página */}
-      <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-4">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 text-azul-rey text-xs font-bold uppercase tracking-wider border border-slate-200">
-          <span>{COMPANY.tagline}</span>
+    <div className="space-y-10 sm:space-y-12 pb-10 sm:pb-16 bg-[#fafafc]">
+      <PageHero
+        eyebrow={COMPANY.tagline}
+        title="Servicios para resolver sus gestiones con claridad"
+        description={COMPANY.purpose}
+        asideValue={String(SERVICES.length).padStart(2, '0')}
+        asideLabel="servicios disponibles"
+      />
+
+      {/* Buscador + filtros de servicios */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
+          <div>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-dorado">
+              Catálogo de servicios
+            </span>
+            <h2 className="mt-1 text-xl sm:text-2xl font-serif font-bold text-azul-rey">
+              Encuentre el apoyo que necesita
+            </h2>
+          </div>
+          <span className="text-xs font-semibold text-slate-500">
+            {filtered.length} de {SERVICES.length} servicios
+          </span>
         </div>
-        <h1 className="text-3xl sm:text-5xl font-serif font-bold text-azul-rey">
-          Nuestros 17 Servicios
-        </h1>
-        <p className="max-w-3xl mx-auto text-base sm:text-lg text-slate-600 leading-relaxed">
-          {COMPANY.purpose}
-        </p>
+
+        {/* Input */}
+        <div className="relative">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
+          <input
+            id="services-search-input"
+            type="search"
+            placeholder="Buscar servicios por nombre, categoría o descripción…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="w-full pl-12 pr-10 py-3.5 rounded-xl border border-slate-200 bg-white shadow-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-azul-rey/40 focus:border-azul-rey text-sm transition"
+            autoComplete="off"
+          />
+          {query && (
+            <button
+              onClick={() => setQuery('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+              aria-label="Limpiar búsqueda"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+
+        {/* Filtros — scroll horizontal, sin wrap */}
+        <div className="relative">
+          {/* Fade derecha */}
+          <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-[#fafafc] to-transparent z-10" />
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+            <button
+              onClick={() => setActiveFilter(null)}
+              className={`flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+                activeFilter === null
+                  ? 'bg-azul-rey text-white border-azul-rey shadow-sm'
+                  : 'bg-white text-slate-600 border-slate-200 hover:border-azul-rey hover:text-azul-rey'
+              }`}
+            >
+              Todos · {SERVICES.length}
+            </button>
+            {ALL_BADGES.map((badge) => {
+              const count = SERVICES.filter((s) => s.badge === badge).length;
+              return (
+                <button
+                  key={badge}
+                  onClick={() => setActiveFilter(activeFilter === badge ? null : badge)}
+                  className={`flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+                    activeFilter === badge
+                      ? 'bg-azul-rey/90 text-white border-azul-rey shadow-sm'
+                      : 'bg-white text-slate-600 border-slate-200 hover:border-azul-rey/60 hover:text-azul-rey'
+                  }`}
+                >
+                  {badge}{count > 1 ? ` · ${count}` : ''}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Contador de resultados */}
+        {(query || activeFilter) && (
+          <p className="text-xs text-slate-400">
+            {filtered.length === 0
+              ? 'No se encontraron servicios.'
+              : `${filtered.length} servicio${filtered.length !== 1 ? 's' : ''} encontrado${filtered.length !== 1 ? 's' : ''}`}
+            {query && (
+              <span> para <strong className="text-slate-600">&quot;{query}&quot;</strong></span>
+            )}
+          </p>
+        )}
       </section>
 
-      {/* Grid con los 17 servicios (Todos con la misma importancia y jerarquía visual) */}
+      {/* Grid de servicios */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {SERVICES.map((service) => (
-            <ServiceCard key={service.id} service={service} />
-          ))}
-        </div>
+        {filtered.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
+            {filtered.map((service) => (
+              <ServiceCard key={service.id} service={service} />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-16 text-slate-400">
+            <Search className="w-12 h-12 mx-auto mb-3 opacity-20" />
+            <p className="text-lg font-medium text-slate-500">Sin resultados</p>
+            <p className="text-sm mt-1">Pruebe con otras palabras o limpie los filtros.</p>
+            <button
+              onClick={() => { setQuery(''); setActiveFilter(null); }}
+              className="mt-4 px-4 py-2 bg-azul-rey text-white text-sm rounded-lg font-semibold hover:bg-azul-rey-dark transition-colors"
+            >
+              Ver todos los servicios
+            </button>
+          </div>
+        )}
       </section>
 
       {/* Bloque de Facturación Electrónica y Asesoría Personalizada */}
