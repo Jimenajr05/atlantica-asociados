@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { MessageCircle, FileText, Search, X } from 'lucide-react';
 import { SERVICES } from '@/content/services';
@@ -11,9 +11,15 @@ import { COMPANY, WHATSAPP_URL } from '@/content/company';
 // All unique badges for filter chips
 const ALL_BADGES = Array.from(new Set(SERVICES.map((s) => s.badge)));
 
+const SERVICES_PER_PAGE = 10;
+
 export default function ServiciosPage() {
   const [query, setQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Reset to page 1 whenever filters change
+  useEffect(() => { setCurrentPage(1); }, [query, activeFilter]);
 
   const filtered = useMemo(() => {
     const q = query.toLowerCase().trim();
@@ -31,6 +37,12 @@ export default function ServiciosPage() {
       return matchesQuery && matchesFilter;
     });
   }, [query, activeFilter]);
+
+  const totalPages = Math.ceil(filtered.length / SERVICES_PER_PAGE) || 1;
+  const paginatedServices = filtered.slice(
+    (currentPage - 1) * SERVICES_PER_PAGE,
+    currentPage * SERVICES_PER_PAGE
+  );
 
   return (
     <div className="space-y-10 sm:space-y-12 pb-10 sm:pb-16 bg-[#fafafc]">
@@ -81,16 +93,24 @@ export default function ServiciosPage() {
           )}
         </div>
 
-        {/* Filtros — scroll horizontal, sin wrap */}
-        <div className="relative">
+        <div className="sm:hidden">
+          <label htmlFor="service-category" className="mb-2 block text-sm font-semibold text-slate-700">Categoría de servicio</label>
+          <select id="service-category" value={activeFilter || ''} onChange={(event) => setActiveFilter(event.target.value || null)} className="min-h-12 w-full rounded-xl border border-slate-300 bg-white px-3 py-3 text-sm text-slate-800">
+            <option value="">Todos los servicios · {SERVICES.length}</option>
+            {ALL_BADGES.map((badge) => <option key={badge} value={badge}>{badge}</option>)}
+          </select>
+        </div>
+        {/* Filtros en pantallas amplias */}
+        <div className="relative hidden sm:block">
           {/* Fade derecha */}
           <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-[#fafafc] to-transparent z-10" />
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+          <div className="flex items-center gap-2 overflow-x-auto p-1 scrollbar-none">
             <button
+              aria-pressed={activeFilter === null}
               onClick={() => setActiveFilter(null)}
-              className={`flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+              className={`min-h-11 flex-shrink-0 px-4 py-2 rounded-full text-xs font-semibold border transition-all ${
                 activeFilter === null
-                  ? 'bg-azul-rey text-white border-azul-rey shadow-sm'
+                  ? 'bg-[#e1e9f3] text-[#163664] border-[#163664] ring-1 ring-[#163664]'
                   : 'bg-white text-slate-600 border-slate-200 hover:border-azul-rey hover:text-azul-rey'
               }`}
             >
@@ -101,10 +121,11 @@ export default function ServiciosPage() {
               return (
                 <button
                   key={badge}
+                  aria-pressed={activeFilter === badge}
                   onClick={() => setActiveFilter(activeFilter === badge ? null : badge)}
-                  className={`flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+                  className={`min-h-11 flex-shrink-0 px-4 py-2 rounded-full text-xs font-semibold border transition-all ${
                     activeFilter === badge
-                      ? 'bg-azul-rey/90 text-white border-azul-rey shadow-sm'
+                      ? 'bg-[#e1e9f3] text-[#163664] border-[#163664] ring-1 ring-[#163664]'
                       : 'bg-white text-slate-600 border-slate-200 hover:border-azul-rey/60 hover:text-azul-rey'
                   }`}
                 >
@@ -131,11 +152,36 @@ export default function ServiciosPage() {
       {/* Grid de servicios */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {filtered.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
-            {filtered.map((service) => (
-              <ServiceCard key={service.id} service={service} />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
+              {paginatedServices.map((service) => (
+                <ServiceCard key={service.id} service={service} />
+              ))}
+            </div>
+
+            {/* Paginación de servicios */}
+            {totalPages > 1 && (
+              <div className="mt-10 flex items-center justify-center gap-3">
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 rounded-lg border border-slate-300 bg-white text-sm font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm"
+                >
+                  ← Anterior
+                </button>
+                <span className="text-sm font-bold text-azul-rey">
+                  Página {currentPage} de {totalPages}
+                </span>
+                <button
+                  onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="px-4 py-2 rounded-lg border border-slate-300 bg-white text-sm font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm"
+                >
+                  Siguiente →
+                </button>
+              </div>
+            )}
+          </>
         ) : (
           <div className="text-center py-16 text-slate-400">
             <Search className="w-12 h-12 mx-auto mb-3 opacity-20" />

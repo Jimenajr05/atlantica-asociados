@@ -26,6 +26,7 @@ import {
 
 interface AppointmentAgendaProps {
   cases: CaseRecord[];
+  initialDate?: string;
   onAppointmentStatusChange: (caseId: string, status: AppointmentStatus) => Promise<void>;
   onAppointmentTimeChange: (caseId: string, timeSlot: TimeSlot) => Promise<void>;
 }
@@ -129,10 +130,10 @@ function getWhatsAppUrl(caseItem: CaseRecord, intent: 'confirm' | 'cancel' = 'co
   return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
 }
 
-export function AppointmentAgenda({ cases, onAppointmentStatusChange, onAppointmentTimeChange }: AppointmentAgendaProps) {
-  const [month, setMonth] = useState(() => localDateString(new Date()).slice(0, 7));
+export function AppointmentAgenda({ cases, initialDate = '', onAppointmentStatusChange, onAppointmentTimeChange }: AppointmentAgendaProps) {
+  const [month, setMonth] = useState(() => (initialDate || localDateString(new Date())).slice(0, 7));
   const [schedule, setSchedule] = useState<AppointmentDayAvailability[]>([]);
-  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedDate, setSelectedDate] = useState(initialDate);
   const [scheduleVersion, setScheduleVersion] = useState(0);
   const [loading, setLoading] = useState(true);
   const [savingSlot, setSavingSlot] = useState<string | null>(null);

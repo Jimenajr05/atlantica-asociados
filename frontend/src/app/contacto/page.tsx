@@ -13,6 +13,7 @@ import {
 import { COMPANY, WHATSAPP_URL } from '@/content/company';
 import { CaseForm } from '@/components/CaseForm';
 import { PageHero } from '@/components/PageHero';
+import { SocialLinks } from '@/components/SocialLinks';
 
 export const metadata: Metadata = {
   title: 'Contacto y Consulta | ATLÁNTICA & ASOCIADOS',
@@ -112,6 +113,11 @@ export default function ContactoPage() {
                       {COMPANY.email}
                     </span>
                   </div>
+                </div>
+
+                <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-700">Redes Sociales:</span>
+                  <SocialLinks />
                 </div>
               </div>
             </div>
