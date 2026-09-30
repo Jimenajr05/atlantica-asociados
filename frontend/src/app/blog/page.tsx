@@ -8,7 +8,7 @@ import { COMPANY, WHATSAPP_URL } from '@/content/company';
 import { PageHero } from '@/components/PageHero';
 
 export const metadata: Metadata = {
-  title: 'Blog y noticias | ATLÁNTICA & ASOCIADOS',
+  title: 'Blog & noticias | ATLÁNTICA & ASOCIADOS',
   description:
     'Guías ciudadanas, artículos de orientación y noticias de Costa Rica en un solo lugar.',
 };
@@ -39,7 +39,7 @@ export default async function BlogIndexPage({
     <div className="space-y-6 sm:space-y-8 lg:space-y-12 pb-10 sm:pb-12 lg:pb-16 bg-[#fafafc]">
       <PageHero
         eyebrow={COMPANY.tagline}
-        title="Blog y noticias"
+        title="Blog & noticias"
         description="Guías para conocer sus derechos y noticias para mantenerse al día. Explore cada sección según lo que necesite."
         asideValue={String(totalPosts).padStart(2, '0')}
         asideLabel={category === 'noticias' ? 'noticias publicadas' : 'artículos del blog'}
@@ -47,7 +47,7 @@ export default async function BlogIndexPage({
 
       {/* Listado de Artículos */}
       <section id="publicaciones" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-24">
-        <nav aria-label="Secciones de Blog y noticias" className="mb-6 grid grid-cols-2 gap-1 rounded-2xl border border-slate-200 bg-slate-100 p-1 sm:max-w-md">
+        <nav aria-label="Secciones de Blog & noticias" className="mb-6 grid grid-cols-2 gap-1 rounded-2xl border border-slate-200 bg-slate-100 p-1 sm:max-w-md">
           {(['blog', 'noticias'] as const).map((type) => (
             <Link key={type} href={`/blog?category=${type}#publicaciones`} aria-current={category === type ? 'page' : undefined} className={`flex min-h-12 min-w-0 items-center justify-center gap-2 rounded-xl px-3 py-3 text-sm font-bold transition-colors ${category === type ? 'bg-azul-rey text-white shadow-sm' : 'text-slate-600 hover:bg-white'}`}>
               {type === 'blog' ? 'Blog' : 'Noticias'}

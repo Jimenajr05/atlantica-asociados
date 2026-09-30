@@ -295,7 +295,7 @@ export default async function HomePage() {
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
             <div>
               <span className="text-xs font-bold uppercase tracking-wider text-azul-rey bg-azul-rey/5 px-3 py-1 rounded-full inline-block mb-2">
-                Blog y noticias
+                Blog & noticias
               </span>
               <h2 className="text-2xl sm:text-3xl font-bold text-azul-rey">
                 Orientación ciudadana y actualidad
@@ -305,7 +305,7 @@ export default async function HomePage() {
               href="/blog"
               className="inline-flex items-center gap-1.5 text-sm font-bold text-azul-rey hover:text-dorado-hover transition-colors"
             >
-              <span>Ver blog y noticias</span>
+              <span>Ver blog & noticias</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>

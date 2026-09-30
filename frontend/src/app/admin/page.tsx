@@ -541,8 +541,8 @@ function AdminDashboardContent() {
               }`}
             >
               <BookOpen className={`w-4 h-4 ${activeTab === 'blog' ? 'text-dorado' : 'text-slate-400'}`} />
-              <span className="sm:hidden">Blog y noticias</span>
-              <span className="hidden sm:inline">Blog y noticias ({posts.length})</span>
+              <span className="sm:hidden">Blog & noticias</span>
+              <span className="hidden sm:inline">Blog & noticias ({posts.length})</span>
               <span className={`rounded-full px-1.5 py-0.5 text-[10px] leading-none sm:hidden ${activeTab === 'blog' ? 'bg-azul-rey/10 text-azul-rey' : 'bg-slate-100 text-slate-600'}`}>
                 {posts.length}
               </span>
@@ -806,7 +806,7 @@ function AdminDashboardContent() {
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <h2 className="text-xl font-bold text-azul-rey font-serif">Blog y noticias</h2>
+                <h2 className="text-xl font-bold text-azul-rey font-serif">Blog & noticias</h2>
                 <p className="text-xs text-slate-500">Cree, edite y publique artículos para el sitio.</p>
               </div>
 

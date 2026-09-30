@@ -77,7 +77,7 @@ export default function NewBlogPostPage() {
           >
             <ArrowLeft className="w-4 h-4" /> Volver al panel de administración
           </Link>
-          <span className="text-xs text-slate-500 sm:text-right">Blog y noticias · Nueva publicación</span>
+          <span className="text-xs text-slate-500 sm:text-right">Blog & noticias · Nueva publicación</span>
         </div>
 
         {errorMessage && (
