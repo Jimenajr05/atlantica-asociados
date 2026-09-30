@@ -19,7 +19,7 @@ export async function sendCaseNotificationEmail(data: CaseEmailNotificationData)
   const pass = process.env.SMTP_PASS;
   const port = parseInt(process.env.SMTP_PORT || '587', 10);
   const secure = process.env.SMTP_SECURE === 'true';
-  const recipient = process.env.NOTIFICATION_EMAIL_TO || 'notificaciones@atlanticayasociados.com';
+  const recipient = process.env.NOTIFICATION_EMAIL_TO || 'infoatlantica.asociados@gmail.com';
 
   // Si no hay configuración SMTP completa, registrar en logs sin romper el flujo
   if (!host || !user || !pass || host.includes('placeholder') || recipient.includes('[CORREO_TEMPORAL]')) {
