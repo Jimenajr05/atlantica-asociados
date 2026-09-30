@@ -105,10 +105,10 @@ SUPABASE_STORAGE_BUCKET=case-documents
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_SECURE=false
-SMTP_USER=tu-correo@gmail.com
+SMTP_USER=infoatlantica.asociados@gmail.com
 SMTP_PASS=tu-contraseña-o-app-password
-SMTP_FROM="Atlántica & Asociados <notificaciones@atlanticayasociados.com>"
-NOTIFICATION_EMAIL_TO=notificaciones@atlanticayasociados.com
+SMTP_FROM="Atlántica & Asociados <infoatlantica.asociados@gmail.com>"
+NOTIFICATION_EMAIL_TO=infoatlantica.asociados@gmail.com
 RATE_LIMIT_MAX_PER_HOUR=5
 ```
 
@@ -119,7 +119,7 @@ NEXT_PUBLIC_API_URL=http://localhost:5000/api
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 NEXT_PUBLIC_WHATSAPP_NUMBER=50660024545
 NEXT_PUBLIC_WHATSAPP_DEFAULT_MESSAGE="Hola, necesito información y asesoría sobre un trámite ante una institución."
-NEXT_PUBLIC_CONTACT_EMAIL=info@atlanticayasociados.com
+NEXT_PUBLIC_CONTACT_EMAIL=infoatlantica.asociados@gmail.com
 
 # Supabase (Opcional - Para autenticación de sesión de admin)
 NEXT_PUBLIC_SUPABASE_URL=https://placeholder-project.supabase.co
@@ -129,7 +129,8 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=placeholder-anon-key
 ### 2. Base de Datos en Supabase (Opcional)
 1. En [supabase.com](https://supabase.com), abra el **SQL Editor**.
 2. Ejecute el script [`backend/supabase/migrations/001_initial_schema.sql`](backend/supabase/migrations/001_initial_schema.sql).
-3. Publique los artículos reales desde el panel de administración.
+3. Ejecute también las migraciones posteriores en orden. Para separar Blog y noticias, aplique [`004_post_categories.sql`](backend/supabase/migrations/004_post_categories.sql). Los artículos existentes quedan en Blog.
+4. Cree publicaciones desde el administrador y seleccione su tipo: Blog o Noticias. En almacenamiento local no se requiere migración.
 
 ---
 
