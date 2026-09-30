@@ -71,7 +71,10 @@ export interface CaseNoteRecord {
   created_at: string;
 }
 
+export type PostCategory = 'blog' | 'noticias';
+
 export interface BlogPost {
+  category?: PostCategory;
   id: string;
   slug: string;
   title: string;

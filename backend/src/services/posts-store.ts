@@ -140,6 +140,7 @@ export async function createPost(postData: Partial<BlogPost>): Promise<BlogPost>
     id: newId,
     slug: postData.slug || `articulo-${Date.now()}`,
     title: postData.title || 'Sin Título',
+    category: postData.category || 'blog',
     excerpt: postData.excerpt || '',
     content: postData.content || '',
     meta_description: postData.meta_description || postData.excerpt || '',
@@ -158,6 +159,7 @@ export async function createPost(postData: Partial<BlogPost>): Promise<BlogPost>
         .from('posts')
         .insert({
           title: newPost.title,
+          category: newPost.category,
           slug: newPost.slug,
           excerpt: newPost.excerpt,
           content: newPost.content,
@@ -169,11 +171,13 @@ export async function createPost(postData: Partial<BlogPost>): Promise<BlogPost>
         .select()
         .single();
 
-      if (!error && data) {
+      if (error) throw error;
+      if (data) {
         newPost.id = data.id;
       }
     } catch (err) {
       console.error('Error insertando en Supabase:', err);
+      throw new Error('No se pudo guardar la publicación en la base de datos. Verifique las migraciones pendientes.');
     }
   }
 
@@ -199,9 +203,11 @@ export async function updatePost(id: string, postData: Partial<BlogPost>): Promi
         payload.published_at = postData.published_at || now;
       }
 
-      await adminSupabase.from('posts').update(payload).eq('id', id);
+      const { error } = await adminSupabase.from('posts').update(payload).eq('id', id);
+      if (error) throw error;
     } catch (err) {
       console.error('Error actualizando en Supabase:', err);
+      throw new Error('No se pudo actualizar la publicación en la base de datos. Verifique las migraciones pendientes.');
     }
   }
 

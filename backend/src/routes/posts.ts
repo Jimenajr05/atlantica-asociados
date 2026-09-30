@@ -19,7 +19,7 @@ router.get('/:slug', async (req: Request, res: Response): Promise<void> => {
     const { slug } = req.params;
     const post = await getPostBySlug(slug);
 
-    if (!post) {
+    if (!post || !post.published) {
       res.status(404).json({ error: 'Artículo no encontrado.' });
       return;
     }

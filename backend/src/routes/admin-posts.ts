@@ -23,14 +23,19 @@ router.get('/', async (_req: Request, res: Response): Promise<void> => {
 router.post('/', async (req: Request, res: Response): Promise<void> => {
   try {
     const body = req.body || {};
-    const { title, slug, excerpt, content, published } = body;
+    const { title, slug, excerpt, content, published, category } = body;
+    if (category !== undefined && category !== 'blog' && category !== 'noticias') {
+      res.status(400).json({ error: 'Seleccione Blog o Noticias como tipo de publicación.' });
+      return;
+    }
 
     if (!title || !slug || !content) {
-      res.status(400).json({ error: 'Título, slug y contenido en Markdown son obligatorios.' });
+      res.status(400).json({ error: 'Título, slug y contenido son obligatorios.' });
       return;
     }
 
     const post = await createPost({
+      category: category || 'blog',
       title: title.trim(),
       slug: slug.trim().toLowerCase(),
       excerpt: excerpt?.trim() || '',
@@ -67,9 +72,14 @@ router.put('/:id', async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
     const body = req.body || {};
-    const { title, slug, excerpt, content, published } = body;
+    const { title, slug, excerpt, content, published, category } = body;
+    if (category !== undefined && category !== 'blog' && category !== 'noticias') {
+      res.status(400).json({ error: 'Seleccione Blog o Noticias como tipo de publicación.' });
+      return;
+    }
 
     const updated = await updatePost(id, {
+      ...(category !== undefined ? { category } : {}),
       title,
       slug,
       excerpt,
