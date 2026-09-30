@@ -30,7 +30,7 @@ Usted nos otorga su consentimiento explícito para analizar dichos antecedentes 
     },
     {
       title: "5. Sus derechos sobre sus datos",
-      content: `En cualquier momento, usted tiene derecho a solicitar la eliminación definitiva de sus documentos y datos personales de nuestros sistemas una vez finalizada la redacción de su documento, escribiéndonos a nuestro WhatsApp +506 6002-4545 o al correo [CORREO_TEMPORAL].`,
+      content: `En cualquier momento, usted tiene derecho a solicitar la eliminación definitiva de sus documentos y datos personales de nuestros sistemas una vez finalizada la redacción de su documento, escribiéndonos a nuestro WhatsApp +506 6002-4545 o al correo infoatlantica.asociados@gmail.com.`,
     },
     {
       title: "6. Alcance del servicio y descargo de responsabilidad legal",

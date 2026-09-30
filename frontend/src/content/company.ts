@@ -24,6 +24,8 @@ export interface CompanyInfo {
   commitment: string;
   values: string[];
   billing: string;
+  facebook: string;
+  instagram: string;
   socialShortText: string;
   legalDisclaimer: string;
 }
@@ -42,7 +44,7 @@ export const COMPANY: CompanyInfo = {
   secondaryPhoneDisplay: "8451-1030",
   whatsappNumber: "50660024545",
   whatsappMessage: "Hola, necesito orientación sobre una situación o trámite institucional.",
-  email: "info@atlanticayasociados.com",
+  email: "infoatlantica.asociados@gmail.com",
   schedule: "Lunes a viernes de 7:00 a.m. a 5:00 p.m.",
   scheduleDetails: {
     days: "Lunes a viernes",
@@ -61,6 +63,8 @@ export const COMPANY: CompanyInfo = {
     "Confidencialidad"
   ],
   billing: "Contamos con facturación electrónica autorizada para brindar nuestros servicios con total formalidad a personas particulares, asociaciones, comunidades y empresas.",
+  facebook: "https://www.facebook.com/share/p/1DnBj4CX8s/",
+  instagram: "https://www.instagram.com/atlanticaasociados/",
   socialShortText: "ATLÁNTICA & ASOCIADOS | Poder y Estrategia\nLe escuchamos y le guiamos paso a paso en sus trámites y reclamos institucionales en Costa Rica.\nTeléfonos de atención: 6002-4545 / 8451-1030",
   legalDisclaimer: "La información disponible en este sitio web tiene carácter orientativo y busca facilitar el entendimiento de trámites ciudadanos. Para gestiones judiciales formales, cada caso se evalúa de manera individualizada.",
 };

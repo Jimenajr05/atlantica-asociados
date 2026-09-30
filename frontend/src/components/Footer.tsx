@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { Phone, Mail, MessageCircle, ShieldCheck } from 'lucide-react';
 import { COMPANY, WHATSAPP_URL } from '@/content/company';
+import { SocialLinks } from '@/components/SocialLinks';
 
 export function Footer() {
   const pathname = usePathname();
@@ -49,6 +50,10 @@ export function Footer() {
               <ShieldCheck className="w-4 h-4 text-dorado" />
               <span>Atención estrictamente confidencial</span>
             </div>
+
+            <div className="pt-2">
+              <SocialLinks />
+            </div>
           </div>
 
           {/* Columna 2: Enlaces Rápidos */}
@@ -79,7 +84,7 @@ export function Footer() {
               </li>
               <li>
                 <Link href="/blog" className="hover:text-dorado transition-colors">
-                  Blog &amp; Guías Ciudadanas
+                  Blog y noticias
                 </Link>
               </li>
               <li>

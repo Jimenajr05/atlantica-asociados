@@ -7,13 +7,14 @@ import { usePathname } from 'next/navigation';
 import { Menu, X, MessageCircle, Phone, Clock, ShieldCheck, Search } from 'lucide-react';
 import { COMPANY, WHATSAPP_URL } from '@/content/company';
 import { SearchBar } from '@/components/SearchBar';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 
 const NAV_LINKS = [
   { name: 'Inicio', href: '/' },
   { name: 'Servicios', href: '/servicios' },
   { name: 'Cómo funciona', href: '/como-funciona' },
   { name: 'Nosotros', href: '/nosotros' },
-  { name: 'Blog', href: '/blog' },
+  { name: 'Blog & noticias', href: '/blog' },
   { name: 'Contacto', href: '/contacto' },
 ];
 
@@ -68,6 +69,8 @@ export function Navbar() {
             >
               <Phone className="w-3 h-3 text-dorado" /> {COMPANY.secondaryPhoneDisplay}
             </a>
+            <span className="text-slate-700">|</span>
+            <LanguageSwitcher />
           </div>
         </div>
       </div>
@@ -113,7 +116,7 @@ export function Navbar() {
 
             {/* Nav desktop — centrada */}
             <nav
-              className="hidden lg:flex items-center gap-0.5 flex-1 justify-center"
+              className="hidden xl:flex items-center gap-0.5 flex-1 justify-center"
               aria-label="Navegación principal"
             >
               {NAV_LINKS.map((link) => {
@@ -122,7 +125,7 @@ export function Navbar() {
                   <Link
                     key={link.name}
                     href={link.href}
-                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap ${
+                    className={`px-2 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap ${
                       isActive
                         ? 'text-dorado bg-slate-900 border-b-2 border-dorado font-semibold'
                         : 'text-slate-300 hover:text-dorado hover:bg-slate-900/70'
@@ -135,7 +138,7 @@ export function Navbar() {
             </nav>
 
             {/* Acciones desktop */}
-            <div className="hidden lg:flex items-center gap-2 flex-shrink-0">
+            <div className="hidden xl:flex items-center gap-2 flex-shrink-0">
               {/* Lupita */}
               <button
                 onClick={() => setSearchOpen((p) => !p)}
@@ -169,7 +172,7 @@ export function Navbar() {
             </div>
 
             {/* Acciones móvil / tablet */}
-            <div className="flex lg:hidden items-center gap-0.5">
+            <div className="flex xl:hidden items-center gap-0.5">
               <button
                 onClick={() => { setSearchOpen((p) => !p); setMobileMenuOpen(false); }}
                 className={`p-1.5 rounded-lg transition-colors ${
@@ -199,7 +202,7 @@ export function Navbar() {
 
         {/* ── Menú móvil desplegable ──────────────────────────── */}
         <div
-          className={`lg:hidden bg-negro border-t border-slate-800 overflow-hidden transition-all duration-300 ease-in-out ${
+          className={`xl:hidden bg-negro border-t border-slate-800 overflow-hidden transition-all duration-300 ease-in-out ${
             mobileMenuOpen ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'
           }`}
         >
