@@ -69,7 +69,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
   const articleSchema = {
     '@context': 'https://schema.org',
-    '@type': 'Article',
+    '@type': post.category === 'noticias' ? 'NewsArticle' : 'BlogPosting',
     headline: post.title,
     description: post.excerpt,
     datePublished: post.published_at || post.created_at,
@@ -106,15 +106,16 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
       <article className="py-12 sm:py-16 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 bg-[#fafafc]">
         <Link
-          href="/blog"
+          href={`/blog?category=${post.category || 'blog'}`}
           className="inline-flex items-center gap-2 text-xs font-bold text-azul-rey hover:text-dorado transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>Volver al blog</span>
+          <span>{post.category === 'noticias' ? 'Volver a noticias' : 'Volver al blog'}</span>
         </Link>
 
         {/* Encabezado del Artículo */}
         <header className="space-y-4 border-b border-slate-200 pb-8 bg-white p-6 sm:p-8 rounded-2xl border shadow-sm">
+          <p className="text-xs font-bold uppercase tracking-wider text-azul-rey">{post.category === 'noticias' ? 'Noticias' : 'Blog'}</p>
           <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
             <span className="flex items-center gap-1.5 text-dorado font-bold uppercase tracking-wider">
               <Calendar className="w-3.5 h-3.5" />
@@ -147,7 +148,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
         {/* Contenido Sanitizado en Markdown */}
         <div className="bg-white p-6 sm:p-10 rounded-2xl border border-slate-200 shadow-sm">
           <div
-            className="prose prose-slate max-w-none text-slate-800 leading-relaxed text-sm sm:text-base space-y-5"
+            className="article-content text-sm sm:text-base"
             dangerouslySetInnerHTML={{ __html: cleanHtmlContent }}
           />
         </div>
