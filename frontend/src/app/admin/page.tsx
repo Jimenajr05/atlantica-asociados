@@ -75,6 +75,16 @@ function AdminDashboardContent() {
   const [statusFilter, setStatusFilter] = useState<string>('todos');
   const [appointmentFilter, setAppointmentFilter] = useState<string>('todos');
   const [selectedCase, setSelectedCase] = useState<CaseRecord | null>(null);
+  const [agendaInitialDate, setAgendaInitialDate] = useState('');
+
+  // Paginación (máximo 10 elementos por página)
+  const [casesPage, setCasesPage] = useState(1);
+  const [blogPage, setBlogPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
+
+  useEffect(() => {
+    setCasesPage(1);
+  }, [searchQuery, statusFilter, appointmentFilter]);
 
   // Estados para notas internas
   const [newNoteContent, setNewNoteContent] = useState('');
@@ -82,6 +92,9 @@ function AdminDashboardContent() {
 
   // Estados de Blog
   const [posts, setPosts] = useState<BlogPost[]>([]);
+  const [postCategory, setPostCategory] = useState<'blog' | 'noticias'>('blog');
+
+  useEffect(() => { setBlogPage(1); }, [postCategory]);
 
   // Modal de confirmación personalizado (reemplaza confirm() y alert() nativos del navegador)
   const [confirmModal, setConfirmModal] = useState<ConfirmModalState>({
@@ -104,6 +117,7 @@ function AdminDashboardContent() {
   // Escuchar parámetros de URL para activar la pestaña de Blog y mostrar alertas
   useEffect(() => {
     const tabParam = searchParams.get('tab');
+    setPostCategory(searchParams.get('category') === 'noticias' ? 'noticias' : 'blog');
     if (tabParam === 'blog') {
       setActiveTab('blog');
     } else if (tabParam === 'agenda') {
@@ -113,7 +127,7 @@ function AdminDashboardContent() {
     }
 
     if (searchParams.get('created') === 'true') {
-      showToast('¡Artículo publicado exitosamente en el blog!', 'success');
+      showToast('¡Publicación guardada exitosamente!', 'success');
     } else if (searchParams.get('updated') === 'true') {
       showToast('¡Artículo actualizado correctamente!', 'success');
     }
@@ -184,6 +198,21 @@ function AdminDashboardContent() {
 
     return matchesSearch && matchesStatus && matchesAppointment;
   });
+
+  const totalCasesPages = Math.ceil(filteredCases.length / ITEMS_PER_PAGE) || 1;
+  const paginatedCases = filteredCases.slice(
+    (casesPage - 1) * ITEMS_PER_PAGE,
+    casesPage * ITEMS_PER_PAGE
+  );
+
+  const filteredPosts = posts.filter((post) => (post.category || 'blog') === postCategory);
+  const totalBlogPages = Math.ceil(filteredPosts.length / ITEMS_PER_PAGE) || 1;
+  const currentBlogPage = Math.min(blogPage, totalBlogPages);
+  const paginatedPosts = filteredPosts.slice(
+    (currentBlogPage - 1) * ITEMS_PER_PAGE,
+    currentBlogPage * ITEMS_PER_PAGE
+  );
+
   const activeAppointmentCount = cases.filter((caseItem) =>
     caseItem.appointment_requested && caseItem.appointment_status !== 'cancelada'
   ).length;
@@ -339,11 +368,12 @@ function AdminDashboardContent() {
   const handleTogglePublish = async (post: BlogPost) => {
     const newPublished = !post.published;
     try {
-      await fetch(`/api/admin/posts/${post.id}`, {
+      const response = await fetch(`/api/admin/posts/${post.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...post, published: newPublished }),
       });
+      if (!response.ok) throw new Error('No se pudo cambiar el estado de publicación.');
 
       setPosts((prev) =>
         prev.map((p) => (p.id === post.id ? { ...p, published: newPublished } : p))
@@ -361,7 +391,7 @@ function AdminDashboardContent() {
   const promptDeletePost = (post: BlogPost) => {
     setConfirmModal({
       isOpen: true,
-      title: '¿Eliminar este artículo del blog?',
+      title: '¿Eliminar esta publicación?',
       description: 'El artículo será retirado definitivamente del catálogo público y del panel de administración.',
       itemHighlight: post.title,
       confirmText: 'Sí, Eliminar Artículo',
@@ -372,7 +402,7 @@ function AdminDashboardContent() {
           await fetch(`/api/admin/posts/${post.id}`, { method: 'DELETE' });
           setPosts((prev) => prev.filter((p) => p.id !== post.id));
           setConfirmModal((prev) => ({ ...prev, isOpen: false }));
-          showToast('Artículo eliminado del blog.', 'success');
+          showToast('Publicación eliminada.', 'success');
         } catch {
           showToast('Error eliminando el artículo.', 'error');
         }
@@ -503,7 +533,7 @@ function AdminDashboardContent() {
             </button>
             <button
               onClick={() => setActiveTab('blog')}
-              aria-label={`Gestión del Blog (${posts.length})`}
+              aria-label={`Blog y noticias (${posts.length})`}
               className={`flex shrink-0 items-center gap-1.5 border-b-2 px-2.5 py-2.5 text-[11px] font-bold transition-colors sm:gap-2 sm:px-4 sm:py-3 sm:text-sm ${
                 activeTab === 'blog'
                   ? 'border-azul-rey text-azul-rey'
@@ -511,8 +541,8 @@ function AdminDashboardContent() {
               }`}
             >
               <BookOpen className={`w-4 h-4 ${activeTab === 'blog' ? 'text-dorado' : 'text-slate-400'}`} />
-              <span className="sm:hidden">Blog</span>
-              <span className="hidden sm:inline">Gestión del Blog ({posts.length})</span>
+              <span className="sm:hidden">Blog y noticias</span>
+              <span className="hidden sm:inline">Blog y noticias ({posts.length})</span>
               <span className={`rounded-full px-1.5 py-0.5 text-[10px] leading-none sm:hidden ${activeTab === 'blog' ? 'bg-azul-rey/10 text-azul-rey' : 'bg-slate-100 text-slate-600'}`}>
                 {posts.length}
               </span>
@@ -677,7 +707,7 @@ function AdminDashboardContent() {
                         </td>
                       </tr>
                     ) : (
-                      filteredCases.map((c) => (
+                      paginatedCases.map((c) => (
                         <tr key={c.id} className="hover:bg-azul-rey-50/50 transition-colors">
                           <td className="py-3.5 px-4">
                             <span className="font-mono font-bold text-azul-rey block">
@@ -737,6 +767,34 @@ function AdminDashboardContent() {
                   </tbody>
                 </table>
               </div>
+
+              {/* Controles de Paginación de Casos (máximo 10 por página) */}
+              {totalCasesPages > 1 && (
+                <div className="bg-slate-50 border-t border-slate-200 px-4 py-3 flex items-center justify-between text-xs text-slate-600">
+                  <span>
+                    Mostrando <strong>{(casesPage - 1) * ITEMS_PER_PAGE + 1}</strong> - <strong>{Math.min(casesPage * ITEMS_PER_PAGE, filteredCases.length)}</strong> de <strong>{filteredCases.length}</strong> casos
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setCasesPage((p) => Math.max(p - 1, 1))}
+                      disabled={casesPage === 1}
+                      className="px-3 py-1.5 rounded border bg-white border-slate-300 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed font-medium transition-colors"
+                    >
+                      Anterior
+                    </button>
+                    <span className="font-bold text-azul-rey">
+                      Página {casesPage} de {totalCasesPages}
+                    </span>
+                    <button
+                      onClick={() => setCasesPage((p) => Math.min(p + 1, totalCasesPages))}
+                      disabled={casesPage === totalCasesPages}
+                      className="px-3 py-1.5 rounded border bg-white border-slate-300 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed font-medium transition-colors"
+                    >
+                      Siguiente
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -748,22 +806,30 @@ function AdminDashboardContent() {
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <h2 className="text-xl font-bold text-azul-rey font-serif">Artículos del Blog</h2>
+                <h2 className="text-xl font-bold text-azul-rey font-serif">Blog y noticias</h2>
                 <p className="text-xs text-slate-500">Cree, edite y publique artículos para el sitio.</p>
               </div>
 
               <Link
-                href="/admin/blog/new"
+                href={`/admin/blog/new?category=${postCategory}`}
                 className="inline-flex items-center justify-center gap-2 bg-azul-rey hover:bg-azul-rey-dark text-white px-4 py-2.5 rounded-md text-xs font-bold shadow-sm transition-colors"
               >
                 <Plus className="w-4 h-4 text-dorado" />
-                <span>Nuevo Artículo</span>
+                <span>Nueva publicación</span>
               </Link>
+            </div>
+
+            <div role="group" aria-label="Tipo de publicaciones" className="flex flex-wrap gap-2">
+              {(['blog', 'noticias'] as const).map((type) => (
+                <button key={type} type="button" aria-pressed={postCategory === type} onClick={() => setPostCategory(type)} className={`rounded-lg border px-4 py-2 text-sm font-bold ${postCategory === type ? 'border-azul-rey bg-azul-rey text-white' : 'border-slate-200 bg-white text-azul-rey'}`}>
+                  {type === 'blog' ? 'Blog' : 'Noticias'} ({posts.filter((post) => (post.category || 'blog') === type).length})
+                </button>
+              ))}
             </div>
 
             <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
-              <table className="min-w-[640px] w-full text-left text-xs text-slate-700">
+              <table className="min-w-[640px] w-full table-fixed text-left text-xs text-slate-700">
                 <thead className="bg-slate-100/80 border-b border-slate-200 text-slate-600 uppercase font-bold text-[10px] tracking-wider">
                   <tr>
                     <th className="py-3.5 px-4">Título</th>
@@ -773,13 +839,13 @@ function AdminDashboardContent() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200">
-                  {posts.length === 0 ? (
+                  {filteredPosts.length === 0 ? (
                     <tr>
                       <td colSpan={4} className="px-4 py-14 text-center text-sm text-slate-500">
-                        Aún no hay artículos en el blog.
+                        {postCategory === 'noticias' ? 'Aún no hay noticias.' : 'Aún no hay artículos en el blog.'}
                       </td>
                     </tr>
-                  ) : posts.map((post) => (
+                  ) : paginatedPosts.map((post) => (
                     <tr key={post.id} className="hover:bg-slate-50">
                       <td className="py-3.5 px-4 font-bold text-slate-900 max-w-sm">
                         {post.title}
@@ -830,6 +896,34 @@ function AdminDashboardContent() {
                 </tbody>
               </table>
               </div>
+
+              {/* Controles de Paginación del Blog (máximo 10 por página) */}
+              {totalBlogPages > 1 && (
+                <div className="bg-slate-50 border-t border-slate-200 px-4 py-3 flex items-center justify-between text-xs text-slate-600">
+                  <span>
+                    Mostrando <strong>{(currentBlogPage - 1) * ITEMS_PER_PAGE + 1}</strong> - <strong>{Math.min(currentBlogPage * ITEMS_PER_PAGE, filteredPosts.length)}</strong> de <strong>{filteredPosts.length}</strong> publicaciones
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setBlogPage(Math.max(currentBlogPage - 1, 1))}
+                      disabled={currentBlogPage === 1}
+                      className="px-3 py-1.5 rounded border bg-white border-slate-300 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed font-medium transition-colors"
+                    >
+                      Anterior
+                    </button>
+                    <span className="font-bold text-azul-rey">
+                      Página {blogPage} de {totalBlogPages}
+                    </span>
+                    <button
+                      onClick={() => setBlogPage(Math.min(currentBlogPage + 1, totalBlogPages))}
+                      disabled={blogPage === totalBlogPages}
+                      className="px-3 py-1.5 rounded border bg-white border-slate-300 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed font-medium transition-colors"
+                    >
+                      Siguiente
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -837,6 +931,7 @@ function AdminDashboardContent() {
         {activeTab === 'agenda' && (
           <AppointmentAgenda
             cases={cases}
+            initialDate={agendaInitialDate}
             onAppointmentStatusChange={handleAppointmentStatusChange}
             onAppointmentTimeChange={handleAppointmentTimeChange}
           />
@@ -969,6 +1064,18 @@ function AdminDashboardContent() {
                         ? `Horario preferido: ${formatCaseAppointmentTime(selectedCase.preferred_time_slot)}`
                         : `Hora: ${formatCaseAppointmentTime(selectedCase.preferred_time_slot)} · Cita de una hora`}
                     </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAgendaInitialDate(selectedCase.preferred_date || '');
+                        setSelectedCase(null);
+                        setActiveTab('agenda');
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-bold text-azul-rey hover:bg-amber-200/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-azul-rey"
+                    >
+                      <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
+                      Ir a agenda
+                    </button>
                   </div>
                 ) : (
                   <span className="text-slate-400">El usuario no solicitó cita previa.</span>

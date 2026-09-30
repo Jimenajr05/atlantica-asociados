@@ -97,7 +97,7 @@ export default function AdminLoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@atlanticayasociados.com"
+                placeholder="infoatlantica.asociados@gmail.com"
                 className="w-full pl-9 pr-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:border-azul-rey focus:ring-1 focus:ring-azul-rey text-slate-800 bg-slate-50/50"
               />
             </div>
