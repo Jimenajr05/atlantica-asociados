@@ -77,10 +77,22 @@ function AdminDashboardContent() {
   const [selectedCase, setSelectedCase] = useState<CaseRecord | null>(null);
   const [agendaInitialDate, setAgendaInitialDate] = useState('');
 
-  // Paginación (máximo 10 elementos por página)
+  // Paginación: 5 elementos en teléfono y 10 en pantallas más amplias.
   const [casesPage, setCasesPage] = useState(1);
   const [blogPage, setBlogPage] = useState(1);
-  const ITEMS_PER_PAGE = 10;
+  const [ITEMS_PER_PAGE, setItemsPerPage] = useState(5);
+
+  useEffect(() => {
+    const mobileQuery = window.matchMedia('(max-width: 639px)');
+    const updatePageSize = () => {
+      setItemsPerPage(mobileQuery.matches ? 5 : 10);
+      setCasesPage(1);
+      setBlogPage(1);
+    };
+    updatePageSize();
+    mobileQuery.addEventListener('change', updatePageSize);
+    return () => mobileQuery.removeEventListener('change', updatePageSize);
+  }, []);
 
   useEffect(() => {
     setCasesPage(1);
@@ -746,20 +758,23 @@ function AdminDashboardContent() {
                               <option value="finalizado">Finalizado</option>
                             </select>
                           </td>
-                          <td className="py-3.5 px-4 text-right space-x-1.5">
+                          <td className="py-3.5 px-4 text-right">
+                            <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
                             <button
                               onClick={() => setSelectedCase(c)}
-                              className="px-2.5 py-1 rounded-lg bg-azul-rey text-white hover:bg-azul-rey-dark font-semibold text-xs transition-colors inline-flex items-center gap-1"
+                              className="h-11 shrink-0 px-2.5 rounded-lg bg-azul-rey text-white hover:bg-azul-rey-dark font-semibold text-xs transition-colors inline-flex items-center justify-center gap-1"
                             >
                               <Eye className="w-3 h-3" /> Ver
                             </button>
                             <button
                               onClick={() => promptDeleteCase(c)}
-                              className="p-1 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
                               title="Eliminar caso"
+                              aria-label="Eliminar caso"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
+                            </div>
                           </td>
                         </tr>
                       ))
@@ -768,9 +783,9 @@ function AdminDashboardContent() {
                 </table>
               </div>
 
-              {/* Controles de Paginación de Casos (máximo 10 por página) */}
+              {/* Controles de paginación de casos */}
               {totalCasesPages > 1 && (
-                <div className="bg-slate-50 border-t border-slate-200 px-4 py-3 flex items-center justify-between text-xs text-slate-600">
+                <div className="bg-slate-50 border-t border-slate-200 px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600">
                   <span>
                     Mostrando <strong>{(casesPage - 1) * ITEMS_PER_PAGE + 1}</strong> - <strong>{Math.min(casesPage * ITEMS_PER_PAGE, filteredCases.length)}</strong> de <strong>{filteredCases.length}</strong> casos
                   </span>
@@ -897,9 +912,9 @@ function AdminDashboardContent() {
               </table>
               </div>
 
-              {/* Controles de Paginación del Blog (máximo 10 por página) */}
+              {/* Controles de paginación del blog */}
               {totalBlogPages > 1 && (
-                <div className="bg-slate-50 border-t border-slate-200 px-4 py-3 flex items-center justify-between text-xs text-slate-600">
+                <div className="bg-slate-50 border-t border-slate-200 px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600">
                   <span>
                     Mostrando <strong>{(currentBlogPage - 1) * ITEMS_PER_PAGE + 1}</strong> - <strong>{Math.min(currentBlogPage * ITEMS_PER_PAGE, filteredPosts.length)}</strong> de <strong>{filteredPosts.length}</strong> publicaciones
                   </span>

@@ -9,6 +9,7 @@ import {
   CaseFileRecord,
 } from '../types';
 import { createAdminClient } from './supabase-admin';
+import { queueAppointmentNotifications } from './appointment-notifications';
 
 const dataDir = path.resolve(process.cwd(), 'data');
 const casesFilePath = path.join(dataDir, 'cases.json');
@@ -132,10 +133,11 @@ export async function getCaseById(idOrCode: string): Promise<CaseRecord | null> 
 // 3. Crear y registrar un nuevo caso
 export async function createCaseRecord(
   caseData: Partial<CaseRecord>,
-  filesMeta: Array<{ name: string; size: number; mimeType: string; path?: string }> = []
+  filesMeta: Array<{ name: string; size: number; mimeType: string; path?: string }> = [],
+  persistedInSupabase = false
 ): Promise<CaseRecord> {
   const now = new Date().toISOString();
-  const newId = `case-${Date.now()}`;
+  const newId = caseData.id || `case-${Date.now()}`;
 
   const files: CaseFileRecord[] = filesMeta.map((f, i) => ({
     id: `file-${Date.now()}-${i}`,
@@ -171,7 +173,7 @@ export async function createCaseRecord(
   };
 
   const adminSupabase = createAdminClient();
-  if (adminSupabase) {
+  if (adminSupabase && !persistedInSupabase) {
     try {
       const { data: dbCase, error: caseError } = await adminSupabase
         .from('cases')
@@ -234,22 +236,24 @@ export async function updateCaseAppointmentStatus(
   id: string,
   status: AppointmentStatus
 ): Promise<boolean> {
+  const existing = await getCaseById(id);
+  if (!existing?.appointment_requested) return false;
+  if ((existing.appointment_status || 'pendiente') === status) return true;
   const adminSupabase = createAdminClient();
   if (adminSupabase) {
     const { error } = await adminSupabase
       .from('cases')
       .update({ appointment_status: status })
-      .eq('id', id);
+      .eq('id', existing.id);
 
     if (error) throw error;
   }
 
   const current = ensureLocalStore();
   const record = current.find((item) => item.id === id || item.case_code === id);
-  if (!record || !record.appointment_requested) return false;
-
-  record.appointment_status = status;
+  if (record) record.appointment_status = status;
   saveLocalStore(current);
+  queueAppointmentNotifications({ ...existing, appointment_status: status }, status);
   return true;
 }
 
@@ -258,13 +262,16 @@ export async function updateCaseAppointmentTime(
   timeSlot: CaseRecord['preferred_time_slot']
 ): Promise<boolean> {
   if (!timeSlot || timeSlot === 'manana' || timeSlot === 'tarde') return false;
+  const existing = await getCaseById(id);
+  if (!existing?.appointment_requested) return false;
+  if (existing.preferred_time_slot === timeSlot) return true;
 
   const adminSupabase = createAdminClient();
   if (adminSupabase) {
     const { data, error } = await adminSupabase
       .from('cases')
       .update({ preferred_time_slot: timeSlot })
-      .eq('id', id)
+      .eq('id', existing.id)
       .eq('appointment_requested', true)
       .select('id')
       .maybeSingle();
@@ -275,10 +282,9 @@ export async function updateCaseAppointmentTime(
 
   const current = ensureLocalStore();
   const record = current.find((item) => item.id === id || item.case_code === id);
-  if (!record || !record.appointment_requested) return false;
-
-  record.preferred_time_slot = timeSlot;
+  if (record) record.preferred_time_slot = timeSlot;
   saveLocalStore(current);
+  queueAppointmentNotifications({ ...existing, preferred_time_slot: timeSlot }, 'reprogramada');
   return true;
 }
 

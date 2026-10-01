@@ -226,10 +226,11 @@ export function Navbar() {
               })}
             </nav>
 
-            <div className="pt-4 border-t border-slate-800 flex flex-col gap-2.5">
+            <div className="mobile-action-row pt-4 border-t border-slate-800 grid grid-cols-2 gap-2">
               <Link
                 href="/contacto"
-                className="w-full text-center py-2.5 px-4 rounded-lg bg-azul-rey text-white font-semibold text-sm hover:bg-azul-rey-dark transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-full inline-flex items-center justify-center text-center py-2.5 px-2 rounded-lg bg-azul-rey text-white font-semibold text-sm hover:bg-azul-rey-dark transition-colors"
               >
                 Cuéntenos su caso
               </Link>
@@ -240,7 +241,7 @@ export function Navbar() {
                 className="w-full inline-flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20ba59] text-white py-2.5 px-4 rounded-lg text-sm font-semibold shadow transition-colors"
               >
                 <MessageCircle className="w-4 h-4 fill-white" />
-                <span>Escríbanos por WhatsApp ({COMPANY.phoneDisplay})</span>
+                <span>WhatsApp</span>
               </a>
             </div>
           </div>

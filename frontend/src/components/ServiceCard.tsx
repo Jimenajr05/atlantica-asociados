@@ -6,9 +6,10 @@ import { getWhatsAppCustomUrl } from '@/content/company';
 
 interface ServiceCardProps {
   service: ServiceItem;
+  compact?: boolean;
 }
 
-export function ServiceCard({ service }: ServiceCardProps) {
+export function ServiceCard({ service, compact = false }: ServiceCardProps) {
   const renderIcon = () => {
     const iconClass = "w-5 h-5 text-dorado";
     switch (service.icon) {
@@ -33,8 +34,8 @@ export function ServiceCard({ service }: ServiceCardProps) {
   );
 
   return (
-    <article className="min-h-[390px] bg-white rounded-xl border border-slate-200 border-t-2 border-t-dorado shadow-sm hover:shadow-md hover:border-slate-300 transition-all duration-200 flex flex-col overflow-hidden group">
-      <div className="p-6 sm:p-7 flex-1">
+    <article className={`${compact ? 'min-w-0' : 'min-h-[390px]'} bg-white rounded-xl border border-slate-200 border-t-2 border-t-dorado shadow-sm hover:shadow-md hover:border-slate-300 transition-all duration-200 flex flex-col overflow-hidden group`}>
+      <div className={`${compact ? 'p-5' : 'p-6 sm:p-7'} flex-1`}>
         <div className="flex items-center justify-between gap-4 mb-5">
           <span className="text-[10px] font-bold tracking-wider uppercase px-2.5 py-1.5 rounded-md bg-slate-100 text-slate-700">
             {service.badge}
@@ -48,16 +49,16 @@ export function ServiceCard({ service }: ServiceCardProps) {
           {service.title}
         </h3>
 
-        <p className="text-[11px] text-slate-500 font-semibold mb-3 flex items-start gap-2">
+        {!compact && <p className="text-[11px] text-slate-500 font-semibold mb-3 flex items-start gap-2">
           <span className="w-1.5 h-1.5 rounded-full bg-dorado mt-1 flex-shrink-0"></span>
           <span>{service.institutionExample}</span>
-        </p>
+        </p>}
 
         <p className="text-sm text-slate-600 mb-5 leading-relaxed">
           {service.summary}
         </p>
 
-        <div className="border-t border-slate-100 pt-4 space-y-2.5">
+        {!compact && <div className="border-t border-slate-100 pt-4 space-y-2.5">
           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
             Le puede servir si
           </p>
@@ -69,7 +70,7 @@ export function ServiceCard({ service }: ServiceCardProps) {
               </li>
             ))}
           </ul>
-        </div>
+        </div>}
       </div>
 
       {/* Pie de tarjeta simétrico */}

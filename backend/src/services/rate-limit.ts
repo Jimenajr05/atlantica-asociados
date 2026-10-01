@@ -14,7 +14,7 @@ setInterval(() => {
       ipRequestMap.delete(ip);
     }
   }
-}, 10 * 60 * 1000);
+}, 10 * 60 * 1000).unref();
 
 export function checkIpRateLimit(
   ip: string,

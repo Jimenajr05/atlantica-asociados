@@ -93,15 +93,8 @@ export default function ServiciosPage() {
           )}
         </div>
 
-        <div className="sm:hidden">
-          <label htmlFor="service-category" className="mb-2 block text-sm font-semibold text-slate-700">Categoría de servicio</label>
-          <select id="service-category" value={activeFilter || ''} onChange={(event) => setActiveFilter(event.target.value || null)} className="min-h-12 w-full rounded-xl border border-slate-300 bg-white px-3 py-3 text-sm text-slate-800">
-            <option value="">Todos los servicios · {SERVICES.length}</option>
-            {ALL_BADGES.map((badge) => <option key={badge} value={badge}>{badge}</option>)}
-          </select>
-        </div>
-        {/* Filtros en pantallas amplias */}
-        <div className="relative hidden sm:block">
+        {/* Filtros por categoría en todos los dispositivos */}
+        <div className="relative">
           {/* Fade derecha */}
           <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-[#fafafc] to-transparent z-10" />
           <div className="flex items-center gap-2 overflow-x-auto p-1 scrollbar-none">
@@ -199,7 +192,7 @@ export default function ServiciosPage() {
 
       {/* Bloque de Facturación Electrónica y Asesoría Personalizada */}
       <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white border border-slate-200 rounded-2xl p-8 sm:p-10 shadow-sm space-y-6 text-center">
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-10 shadow-sm space-y-6 text-center">
           <div className="space-y-2 max-w-2xl mx-auto">
             <span className="text-xs font-bold uppercase tracking-wider text-dorado block">
               Formalidad y Respaldo
@@ -212,7 +205,7 @@ export default function ServiciosPage() {
             </p>
           </div>
 
-          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3.5">
+          <div className="mobile-action-row pt-2 flex flex-col sm:flex-row items-center justify-center gap-3.5">
             <a
               href={WHATSAPP_URL}
               target="_blank"
@@ -220,14 +213,16 @@ export default function ServiciosPage() {
               className="inline-flex items-center gap-2 bg-[#25D366] hover:bg-[#20ba59] text-white px-6 py-3.5 rounded-xl font-bold text-sm shadow transition-all"
             >
               <MessageCircle className="w-4 h-4 fill-white" />
-              <span>Consultar trámite por WhatsApp</span>
+              <span className="sm:hidden">WhatsApp</span>
+              <span className="hidden sm:inline">Consultar trámite por WhatsApp</span>
             </a>
             <Link
               href="/contacto"
               className="inline-flex items-center gap-2 bg-azul-rey hover:bg-azul-rey-dark text-white px-6 py-3.5 rounded-xl font-bold text-sm transition-colors"
             >
               <FileText className="w-4 h-4 text-dorado" />
-              <span>Enviar caso por formulario</span>
+              <span className="sm:hidden">Enviar caso</span>
+              <span className="hidden sm:inline">Enviar caso por formulario</span>
             </Link>
           </div>
         </div>

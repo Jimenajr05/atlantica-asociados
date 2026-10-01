@@ -2,6 +2,73 @@
 @tailwind components;
 @tailwind utilities;
 
+.home-hero { min-height: min(36rem, 80svh); }
+.home-hero-image { object-position: 55% center; }
+.home-card-grid > * { min-width: 0; }
+.home-service-grid h3 { font-size: 1.125rem; line-height: 1.4; }
+.home-service-grid > article > div:first-child > p { margin-bottom: 0; }
+@media (max-width: 639px) {
+  .home-card-grid > * { min-width: 0; }
+  .home-situation-grid > div {
+    flex-direction: row;
+    padding: 1rem;
+    gap: 0.75rem;
+  }
+  .home-service-grid > article > div:first-child,
+  .home-step-grid > div,
+  .home-post-grid > article { padding: 1rem; }
+  .home-service-grid h3,
+  .home-step-grid h3 { font-size: 1rem; }
+  .home-service-grid > article > div:first-child > div:first-child { gap: 0.375rem; }
+  .home-service-grid > article > div:first-child > div:first-child > div {
+    width: 2rem;
+    height: 2rem;
+  }
+  .home-service-grid > article > div:last-child {
+    flex-wrap: wrap;
+    padding: 0.75rem 1rem;
+    gap: 0.5rem;
+  }
+  .home-service-grid > article > div:last-child > a {
+    min-height: 44px;
+    justify-content: center;
+    text-align: center;
+  }
+  .mobile-action-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 0.5rem;
+    width: 100%;
+  }
+  .mobile-action-row > a {
+    width: 100%;
+    min-width: 0;
+    min-height: 48px;
+    justify-content: center;
+    gap: 0.375rem;
+    padding: 0.75rem 0.5rem;
+    font-size: 0.75rem;
+    line-height: 1.25;
+  }
+  .mobile-action-row > a > svg {
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+  }
+}
+@media (min-width: 640px) {
+  .home-hero { min-height: max(32.5rem, 70svh); }
+  .home-hero-image { object-position: center center; }
+}
+@media (min-width: 1024px) {
+  .home-hero { min-height: max(36.25rem, 70svh); }
+}
+
+/* El formulario de casos conserva sus dimensiones y diseño. */
+button:not(form:has(input[name="website_url_hp"]) button) { min-height: 44px; min-width: 44px; }
+nav a, [aria-labelledby="appointment-agenda-title"] a { min-height: 44px; }
+
 :root {
   /* ==========================================================================
      PALETA DE COLORES - ATLÁNTICA & ASOCIADOS (Cercana, Humana y Profesional)

@@ -13,6 +13,8 @@ import { checkIpRateLimit } from '../services/rate-limit';
 import { sendCaseNotificationEmail } from '../services/email';
 import { isAppointmentSlotAvailable } from '../services/appointments-store';
 import { TimeSlot } from '../types';
+import { normalizeEmail, normalizeWhatsApp } from '../services/notification-contact';
+import { queueAppointmentNotifications } from '../services/appointment-notifications';
 
 const router = Router();
 const upload = multer({
@@ -76,6 +78,15 @@ router.post('/', upload.array('files', MAX_FILES_COUNT), async (req: Request, re
     }
 
     const validatedData = parseResult.data;
+    if (validatedData.appointmentRequested) {
+      try {
+        validatedData.phone = normalizeWhatsApp(validatedData.phone);
+        if (validatedData.email) validatedData.email = normalizeEmail(validatedData.email);
+      } catch {
+        res.status(400).json({ error: 'Revise el correo y el WhatsApp internacional de su cita (+506 por defecto).' });
+        return;
+      }
+    }
 
     if (
       validatedData.appointmentRequested &&
@@ -123,6 +134,7 @@ router.post('/', upload.array('files', MAX_FILES_COUNT), async (req: Request, re
     const caseCode = generateCaseCode();
     const adminSupabase = createAdminClient();
     let savedCaseId = `case-${Date.now()}`;
+    let persistedInSupabase = false;
 
     const filesMeta = validFiles.map((f) => ({
       name: f.originalname,
@@ -154,6 +166,7 @@ router.post('/', upload.array('files', MAX_FILES_COUNT), async (req: Request, re
         .single();
 
       if (!caseInsertError && caseRecord) {
+        persistedInSupabase = true;
         savedCaseId = caseRecord.id;
         const bucketName = process.env.SUPABASE_STORAGE_BUCKET || 'case-documents';
 
@@ -183,7 +196,7 @@ router.post('/', upload.array('files', MAX_FILES_COUNT), async (req: Request, re
     }
 
     // 6. Persist to store
-    await createCaseRecord(
+    const savedCase = await createCaseRecord(
       {
         id: savedCaseId,
         case_code: caseCode,
@@ -200,12 +213,14 @@ router.post('/', upload.array('files', MAX_FILES_COUNT), async (req: Request, re
         status: 'nuevo',
         ip_address: ip,
       },
-      filesMeta
+      filesMeta,
+      persistedInSupabase
     );
+    queueAppointmentNotifications(savedCase, 'creada');
 
     // 7. Send email notification
     try {
-      await sendCaseNotificationEmail({
+      if (!validatedData.appointmentRequested) void sendCaseNotificationEmail({
         caseCode,
         fullName: validatedData.fullName,
         phone: validatedData.phone,

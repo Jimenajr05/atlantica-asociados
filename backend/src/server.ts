@@ -12,6 +12,7 @@ import adminCasesRouter from './routes/admin-cases';
 import postsRouter from './routes/posts';
 import adminPostsRouter from './routes/admin-posts';
 import appointmentsRouter from './routes/appointments';
+import { startNotificationWorker } from './services/appointment-notifications';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -73,6 +74,7 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
 });
 
 if (process.env.NODE_ENV !== 'test') {
+  startNotificationWorker();
   app.listen(PORT, () => {
     console.log(`🚀 [BACKEND] Servidor ejecutándose en http://localhost:${PORT}`);
     console.log(`📡 [HEALTH] http://localhost:${PORT}/api/health`);

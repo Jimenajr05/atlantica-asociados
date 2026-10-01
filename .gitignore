@@ -26,6 +26,8 @@ dist/
 dist-ssr/
 *.local
 *.tsbuildinfo
+backend/data/appointment-notifications.json*
+.verification/
 
 # Environment variables & secrets
 .env

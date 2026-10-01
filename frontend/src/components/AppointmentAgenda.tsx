@@ -32,6 +32,7 @@ interface AppointmentAgendaProps {
 }
 
 const WEEKDAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie'];
+const REQUESTS_PER_PAGE = 2;
 
 function formatAppointmentTime(value: string) {
   const [hour, minute] = value.split(':').map(Number);
@@ -134,6 +135,7 @@ export function AppointmentAgenda({ cases, initialDate = '', onAppointmentStatus
   const [month, setMonth] = useState(() => (initialDate || localDateString(new Date())).slice(0, 7));
   const [schedule, setSchedule] = useState<AppointmentDayAvailability[]>([]);
   const [selectedDate, setSelectedDate] = useState(initialDate);
+  const [requestsPagination, setRequestsPagination] = useState({ date: initialDate, page: 0 });
   const [scheduleVersion, setScheduleVersion] = useState(0);
   const [loading, setLoading] = useState(true);
   const [savingSlot, setSavingSlot] = useState<string | null>(null);
@@ -160,6 +162,14 @@ export function AppointmentAgenda({ cases, initialDate = '', onAppointmentStatus
     .filter((caseItem) => caseItem.appointment_requested && caseItem.preferred_date === selectedDate)
     .sort((left, right) => (left.preferred_time_slot || '').localeCompare(right.preferred_time_slot || ''));
   const monthLabel = formatDate(`${month}-01`, { month: 'long', year: 'numeric' });
+  const requestsPageCount = Math.ceil(selectedDayCases.length / REQUESTS_PER_PAGE);
+  const requestsPage = requestsPagination.date === selectedDate
+    ? Math.min(requestsPagination.page, Math.max(0, requestsPageCount - 1))
+    : 0;
+  const visibleDayCases = selectedDayCases.slice(
+    requestsPage * REQUESTS_PER_PAGE,
+    (requestsPage + 1) * REQUESTS_PER_PAGE,
+  );
 
   useEffect(() => {
     const controller = new AbortController();
@@ -476,7 +486,7 @@ export function AppointmentAgenda({ cases, initialDate = '', onAppointmentStatus
               <p className="py-3 text-xs text-slate-500">No hay solicitudes para esta fecha.</p>
             ) : (
               <ul className="divide-y divide-slate-200">
-                {selectedDayCases.map((caseItem) => {
+                {visibleDayCases.map((caseItem) => {
                   const status = getAppointmentStatus(caseItem);
                   const pending = status === 'pendiente';
                   const canceled = status === 'cancelada';
@@ -575,6 +585,29 @@ export function AppointmentAgenda({ cases, initialDate = '', onAppointmentStatus
                 })}
               </ul>
             )}
+            {requestsPageCount > 1 && (
+              <nav aria-label="Páginas de solicitudes del día" className="flex items-center justify-between gap-2 pt-2">
+                <button
+                  type="button"
+                  disabled={requestsPage === 0}
+                  onClick={() => setRequestsPagination({ date: selectedDate, page: requestsPage - 1 })}
+                  className="inline-flex items-center gap-1 rounded-md border border-slate-300 px-2 py-1.5 text-xs text-slate-600 hover:bg-slate-50 disabled:opacity-40"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" /> Anterior
+                </button>
+                <span role="status" className="text-[11px] tabular-nums text-slate-500">
+                  {requestsPage + 1} de {requestsPageCount}
+                </span>
+                <button
+                  type="button"
+                  disabled={requestsPage === requestsPageCount - 1}
+                  onClick={() => setRequestsPagination({ date: selectedDate, page: requestsPage + 1 })}
+                  className="inline-flex items-center gap-1 rounded-md border border-slate-300 px-2 py-1.5 text-xs text-slate-600 hover:bg-slate-50 disabled:opacity-40"
+                >
+                  Siguiente <ChevronRight className="h-3.5 w-3.5" />
+                </button>
+              </nav>
+            )}
           </div>
         </div>
       </div>
@@ -585,7 +618,7 @@ export function AppointmentAgenda({ cases, initialDate = '', onAppointmentStatus
             <div>
               <h3 id="cancel-appointment-title" className="font-semibold text-slate-900">¿Cancelar esta cita?</h3>
               <p className="mt-1 text-sm text-slate-600">
-                Avise al cliente por WhatsApp y luego confirme para liberar la franja.
+                Confirme para liberar la franja. El sistema enviará las notificaciones por correo y WhatsApp.
               </p>
             </div>
             <a
@@ -595,7 +628,7 @@ export function AppointmentAgenda({ cases, initialDate = '', onAppointmentStatus
               className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-[#128C7E] px-3 py-2.5 text-xs font-semibold text-white transition-colors hover:bg-[#0f776b]"
             >
               <MessageCircle className="h-4 w-4" />
-              Avisar al cliente por WhatsApp
+              Abrir WhatsApp para contacto adicional
             </a>
             <div className="flex justify-end gap-2 border-t border-slate-100 pt-3">
               <button type="button" onClick={() => setCancelTarget(null)} className="rounded-md border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50">

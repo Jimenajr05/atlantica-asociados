@@ -25,7 +25,7 @@ export function WhatsAppFloatingButton() {
           <span>Escríbanos directamente</span>
           <button
             onClick={() => setShowTooltip(false)}
-            className="text-slate-400 hover:text-slate-600 ml-1 p-0.5"
+            className="flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center text-slate-400 hover:text-slate-600 ml-1 p-0.5"
             aria-label="Cerrar sugerencia de WhatsApp"
           >
             <X className="w-3.5 h-3.5" />

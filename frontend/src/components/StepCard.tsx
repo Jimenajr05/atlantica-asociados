@@ -35,7 +35,7 @@ export const WORKFLOW_STEPS: StepItem[] = [
   },
 ];
 
-export function StepCard({ step }: { step: StepItem }) {
+export function StepCard({ step, compact = false }: { step: StepItem; compact?: boolean }) {
   const getIcon = (num: number) => {
     switch (num) {
       case 1:
@@ -75,9 +75,9 @@ export function StepCard({ step }: { step: StepItem }) {
       </div>
 
       {/* Detalle ampliado */}
-      <p className="text-xs text-slate-500 leading-relaxed border-t border-slate-200/60 pt-3">
+      {!compact && <p className="text-xs text-slate-500 leading-relaxed border-t border-slate-200/60 pt-3">
         {step.detail}
-      </p>
+      </p>}
     </div>
   );
 }

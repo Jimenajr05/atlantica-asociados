@@ -29,23 +29,23 @@ export default async function HomePage() {
       {/* ========================================================================
           1. HERO SECTION - ASESORÍA Y REVISIÓN DE EXPEDIENTE (FOTO PROFESIONAL Y CÁLIDA)
           ======================================================================== */}
-      <section className="relative sm:min-h-[520px] lg:min-h-[580px] flex items-center justify-center border-b border-slate-200 overflow-hidden bg-slate-900 text-white">
+      <section className="home-hero relative flex items-center justify-center border-b border-slate-200 overflow-hidden bg-slate-900 text-white">
         {/* Imagen de fondo (Asesora legal revisando expediente con balanza de justicia y gafas) */}
         <div className="absolute inset-0 z-0">
           <Image
             src="/assets/hero_legal_bg.jpg"
             alt="Asesoría legal profesional sin caras mostrando documentos y balanza de justicia"
             fill
-            priority
+            preload
             sizes="100vw"
-            className="object-cover object-center opacity-20 sm:opacity-55 transform scale-100"
+            className="home-hero-image object-cover opacity-55"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#0b0f19] via-[#0b0f19]/90 to-[#0b0f19]/70 sm:via-[#0b0f19]/65 sm:to-[#0b0f19]/35" />
         </div>
 
         <div className="relative z-10 max-w-5xl mx-auto px-6 sm:px-6 lg:px-8 py-9 sm:py-24 text-left sm:text-center space-y-5 sm:space-y-7">
           {/* Logotipo distintivo idéntico a la imagen de referencia */}
-          <div className="hidden sm:flex flex-col items-center justify-center text-center space-y-1 mb-2 select-none">
+          <div className="flex flex-col items-center justify-center text-center space-y-1 mb-2 select-none">
             <span className="font-serif text-2xl sm:text-4xl lg:text-5xl tracking-[0.22em] text-dorado font-bold uppercase drop-shadow-md">
               ATLÁNTICA
             </span>
@@ -77,7 +77,7 @@ export default async function HomePage() {
           </p>
 
           {/* Botones de acción principales */}
-          <div className="pt-1 sm:pt-3 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 max-w-md mx-auto sm:max-w-none">
+          <div className="mobile-action-row pt-1 sm:pt-3 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 max-w-md mx-auto sm:max-w-none">
             <a
               href={WHATSAPP_URL}
               target="_blank"
@@ -86,7 +86,7 @@ export default async function HomePage() {
             >
               <MessageCircle className="w-5 h-5 fill-white" />
               <span className="flex flex-row items-center gap-0.5 sm:gap-2">
-                <span className="sm:hidden">Hablar por WhatsApp</span><span className="hidden sm:inline">Chatear por WhatsApp</span>
+                <span className="sm:hidden">WhatsApp</span><span className="hidden sm:inline">Chatear por WhatsApp</span>
                 <span className="hidden sm:inline text-xs sm:text-sm font-semibold text-white/90">{COMPANY.phoneDisplay}</span>
               </span>
             </a>
@@ -120,7 +120,7 @@ export default async function HomePage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 pt-2">
+          <div className="home-card-grid home-situation-grid grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 pt-2">
             <div className="flex items-start gap-3.5 p-5 rounded-xl bg-white border border-slate-200 shadow-sm">
               <div className="w-10 h-10 rounded-lg bg-azul-rey/10 text-azul-rey flex items-center justify-center flex-shrink-0 mt-0.5">
                 <Hospital className="w-5 h-5" />
@@ -202,9 +202,9 @@ export default async function HomePage() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="home-card-grid home-service-grid grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
           {featuredServices.map((service) => (
-            <ServiceCard key={service.id} service={service} />
+            <ServiceCard key={service.id} service={service} compact />
           ))}
         </div>
       </section>
@@ -226,7 +226,7 @@ export default async function HomePage() {
             <div className="absolute inset-0 bg-gradient-to-b from-[#0b0f19]/90 via-[#0b0f19]/80 to-[#0b0f19]" />
           </div>
 
-          <div className="relative z-10 p-8 sm:p-12 space-y-10">
+          <div className="relative z-10 p-4 sm:p-12 space-y-10">
             <div className="text-center max-w-2xl mx-auto space-y-2">
               <span className="text-xs font-bold uppercase tracking-wider text-dorado bg-white/10 px-3 py-1 rounded-full inline-block">
                 Camino Claro y Transparente
@@ -239,9 +239,9 @@ export default async function HomePage() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="home-card-grid home-step-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               {WORKFLOW_STEPS.map((step) => (
-                <StepCard key={step.number} step={step} />
+                <StepCard key={step.number} step={step} compact />
               ))}
             </div>
 
@@ -310,7 +310,7 @@ export default async function HomePage() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="home-card-grid home-post-grid grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
             {recentPosts.map((post) => (
               <article
                 key={post.id}
@@ -357,7 +357,7 @@ export default async function HomePage() {
           7. LLAMADO FINAL CERCANO Y ACOGEDOR
           ======================================================================== */}
       <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-azul-rey rounded-2xl p-8 sm:p-12 text-center text-white space-y-6 shadow-md border border-azul-rey-dark">
+        <div className="bg-azul-rey rounded-2xl p-5 sm:p-12 text-center text-white space-y-6 shadow-md border border-azul-rey-dark">
           <div className="space-y-2 max-w-xl mx-auto">
             <h2 className="text-2xl sm:text-3xl font-bold text-white">
               ¿Desea consultarnos su situación hoy mismo?
@@ -366,7 +366,7 @@ export default async function HomePage() {
               No enfrente la confusión a solas. Escríbanos con total confianza a nuestro WhatsApp y le diremos de forma clara cómo proceder.
             </p>
           </div>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5">
+          <div className="mobile-action-row flex flex-col sm:flex-row items-center justify-center gap-3.5">
             <a
               href={WHATSAPP_URL}
               target="_blank"
@@ -374,14 +374,16 @@ export default async function HomePage() {
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-[#25D366] hover:bg-[#20ba59] text-white px-7 py-3.5 rounded-xl font-bold text-sm sm:text-base shadow transition-all"
             >
               <MessageCircle className="w-5 h-5 fill-white" />
-              <span>Chatear al {COMPANY.phoneDisplay}</span>
+              <span className="sm:hidden">WhatsApp</span>
+              <span className="hidden sm:inline">Chatear al {COMPANY.phoneDisplay}</span>
             </a>
             <Link
               href="/contacto"
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 text-white border border-white/20 px-6 py-3.5 rounded-xl font-bold text-sm sm:text-base transition-colors"
             >
               <FileCheck2 className="w-4 h-4 text-dorado" />
-              <span>Enviar caso por formulario</span>
+              <span className="sm:hidden">Enviar caso</span>
+              <span className="hidden sm:inline">Enviar caso por formulario</span>
             </Link>
           </div>
         </div>

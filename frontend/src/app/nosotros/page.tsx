@@ -74,7 +74,7 @@ export default function NosotrosPage() {
 
       {/* 4. Nuestro Compromiso y Valores */}
       <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-azul-rey text-white rounded-2xl p-8 sm:p-12 shadow-md space-y-8">
+        <div className="bg-azul-rey text-white rounded-2xl p-5 sm:p-12 shadow-md space-y-8">
           <div className="space-y-3 text-center max-w-3xl mx-auto">
             <span className="text-xs font-bold uppercase tracking-wider text-dorado block">
               Filosofía de Trabajo
@@ -91,11 +91,11 @@ export default function NosotrosPage() {
             <h3 className="text-xs font-bold uppercase tracking-widest text-center text-slate-300 mb-6">
               Valores que Guían Nuestra Gestión
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-center">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 text-center">
               {COMPANY.values.map((val, idx) => (
                 <div
                   key={idx}
-                  className="flex min-h-16 items-center justify-center bg-white/10 border border-white/15 rounded-xl px-4 py-3 text-sm font-bold text-white hover:bg-white/20 transition-colors"
+                  className="flex min-h-16 items-center justify-center bg-white/10 border border-white/15 rounded-xl px-2 sm:px-4 py-3 text-xs sm:text-sm leading-snug font-bold text-white hover:bg-white/20 transition-colors"
                 >
                   {val}
                 </div>
