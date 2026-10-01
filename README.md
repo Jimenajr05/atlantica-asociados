@@ -46,7 +46,7 @@ atlantica-asociados/
 
 Desde la raíz del repositorio:
 
-Utilice Node.js 22.18 o posterior. Consulte [`REVISION-TECNICA.md`](REVISION-TECNICA.md) para los resultados de la revisión y las comprobaciones disponibles.
+Utilice Node.js 22.18 o posterior. Ejecute `npm run typecheck` y `npm test` para comprobar tipos y pruebas en ambas aplicaciones.
 
 | Comando | Acción |
 | :--- | :--- |
@@ -140,7 +140,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=placeholder-anon-key
 
 Para desplegar, configure `NODE_ENV=production`, credenciales reales de Supabase y un perfil con rol `admin`. El backend valida el token y el rol en todas las rutas administrativas. Sin Supabase, el acceso local está habilitado únicamente con `NODE_ENV=development` o `test`. Configure `TRUST_PROXY` con las direcciones o redes de sus proxies de confianza; `loopback` corresponde al proxy Next.js en la misma máquina.
 
-En modo local, los adjuntos se guardan en `backend/data/case-files/` y se descargan mediante la API administrativa; este directorio debe respaldarse junto con los JSON. Los adjuntos anteriores que solo registraban metadatos no pueden recuperarse automáticamente. El almacenamiento JSON y la cola de notificaciones requieren un único proceso backend y disco persistente. Vea [`NOTIFICACIONES-Y-RESPONSIVE.md`](NOTIFICACIONES-Y-RESPONSIVE.md) para configurar SMTP y WhatsApp.
+En modo local, los adjuntos se guardan en `backend/data/case-files/` y se descargan mediante la API administrativa; este directorio debe respaldarse junto con los JSON. Los adjuntos anteriores que solo registraban metadatos no pueden recuperarse automáticamente. El almacenamiento JSON y la cola de notificaciones requieren un único proceso backend y disco persistente. Consulte las plantillas [`backend/.env.example`](backend/.env.example) y [`frontend/.env.example`](frontend/.env.example) para configurar las variables de SMTP y WhatsApp.
 
 ---
 

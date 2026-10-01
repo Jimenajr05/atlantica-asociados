@@ -83,5 +83,3 @@ export const caseSubmissionSchema = z.object({
     }
   }
 });
-
-export type CaseSubmissionInput = z.infer<typeof caseSubmissionSchema>;

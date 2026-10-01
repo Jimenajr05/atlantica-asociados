@@ -78,10 +78,3 @@ export interface BlogPost {
   updated_at: string;
   reading_time_minutes?: number;
 }
-
-export interface UserProfile {
-  id: string;
-  email: string;
-  role: 'admin' | 'staff';
-  created_at: string;
-}
