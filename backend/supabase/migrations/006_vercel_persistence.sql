@@ -36,7 +36,7 @@ LANGUAGE sql SECURITY DEFINER SET search_path = public AS $$
   UPDATE public.notification_jobs AS jobs
   SET attempts = attempts + 1,
       lease_until = (extract(epoch FROM now()) * 1000)::bigint + 120000,
-      lease_token = uuid_generate_v4()
+      lease_token = gen_random_uuid()
   FROM due WHERE jobs.key = due.key RETURNING jobs.*;
 $$;
 REVOKE ALL ON FUNCTION public.claim_notification_jobs(integer) FROM PUBLIC, anon, authenticated;
@@ -127,7 +127,7 @@ RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE event_name text;
   event_label text;
   message_values jsonb;
-  event_key text := uuid_generate_v4()::text;
+  event_key text := gen_random_uuid()::text;
   recipient text;
 BEGIN
   IF NOT NEW.appointment_requested THEN RETURN NEW; END IF;

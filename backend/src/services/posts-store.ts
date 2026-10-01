@@ -19,6 +19,7 @@ function saveLocalStore(posts: BlogPost[]) {
 // 1. Obtener todos los artículos (Admin: publicados y borradores)
 export async function getAllPosts(): Promise<BlogPost[]> {
   const adminSupabase = createAdminClient();
+  if (usesCloudStorage() && !adminSupabase) throw new Error("Supabase no configurado en el backend.");
   if (adminSupabase) {
     try {
       const { data, error } = await adminSupabase
@@ -41,6 +42,7 @@ export async function getAllPosts(): Promise<BlogPost[]> {
 // 2. Obtener solo artículos publicados (Público / SEO)
 export async function getPublicPosts(): Promise<BlogPost[]> {
   const adminSupabase = createAdminClient();
+  if (usesCloudStorage() && !adminSupabase) throw new Error("Supabase no configurado en el backend.");
   if (adminSupabase) {
     try {
       const { data, error } = await adminSupabase
@@ -64,6 +66,7 @@ export async function getPublicPosts(): Promise<BlogPost[]> {
 // 3. Obtener un artículo por Slug
 export async function getPostBySlug(slug: string): Promise<BlogPost | null> {
   const adminSupabase = createAdminClient();
+  if (usesCloudStorage() && !adminSupabase) throw new Error("Supabase no configurado en el backend.");
   if (adminSupabase) {
     try {
       const { data, error } = await adminSupabase
@@ -88,6 +91,7 @@ export async function getPostBySlug(slug: string): Promise<BlogPost | null> {
 // 4. Obtener un artículo por ID
 export async function getPostById(id: string): Promise<BlogPost | null> {
   const adminSupabase = createAdminClient();
+  if (usesCloudStorage() && !adminSupabase) throw new Error("Supabase no configurado en el backend.");
   if (adminSupabase) {
     try {
       const { data, error } = await adminSupabase
@@ -132,6 +136,7 @@ export async function createPost(postData: Partial<BlogPost>): Promise<BlogPost>
   };
 
   const adminSupabase = createAdminClient();
+  if (usesCloudStorage() && !adminSupabase) throw new Error("Supabase no configurado en el backend.");
   if (adminSupabase) {
     try {
       const { data, error } = await adminSupabase
@@ -188,6 +193,7 @@ export async function updatePost(id: string, postData: Partial<BlogPost>): Promi
       : existing.reading_time_minutes,
   };
   const adminSupabase = createAdminClient();
+  if (usesCloudStorage() && !adminSupabase) throw new Error("Supabase no configurado en el backend.");
 
   if (adminSupabase) {
     try {
@@ -218,6 +224,7 @@ export async function deletePost(id: string): Promise<boolean> {
   const existing = await getPostById(id);
   if (!existing) return false;
   const adminSupabase = createAdminClient();
+  if (usesCloudStorage() && !adminSupabase) throw new Error("Supabase no configurado en el backend.");
   if (adminSupabase) {
     try {
       const { error } = await adminSupabase.from('posts').delete().eq('id', existing.id);

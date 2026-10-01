@@ -132,6 +132,7 @@ function AdminDashboardContent() {
 
   // Escuchar parámetros de URL para activar la pestaña de Blog y mostrar alertas
   useEffect(() => {
+    if (!searchParams) return;
     const tabParam = searchParams.get('tab');
     setPostCategory(searchParams.get('category') === 'noticias' ? 'noticias' : 'blog');
     if (tabParam === 'blog') {

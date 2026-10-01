@@ -10,8 +10,8 @@ import React, { useEffect, useState } from 'react';
 
 export default function EditBlogPostPage() {
   const router = useRouter();
-  const params = useParams();
-  const postId = params.id as string;
+  const params = useParams<{ id: string }>();
+  const postId = params?.id || '';
 
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
@@ -24,6 +24,7 @@ export default function EditBlogPostPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!postId) return;
     async function fetchPost() {
       try {
         const res = await adminFetch(`/api/admin/posts/${encodeURIComponent(postId)}`);

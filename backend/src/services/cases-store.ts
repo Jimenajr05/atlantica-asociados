@@ -27,6 +27,7 @@ function saveLocalStore(cases: CaseRecord[]) {
 // 1. Obtener todos los casos
 export async function getAllCases(): Promise<CaseRecord[]> {
   const adminSupabase = createAdminClient();
+  if (usesCloudStorage() && !adminSupabase) throw new Error("Supabase no configurado en el backend.");
   if (adminSupabase) {
     try {
       const { data, error } = await adminSupabase
@@ -52,6 +53,7 @@ export async function getAllCases(): Promise<CaseRecord[]> {
 
 export async function getAppointmentBookings(): Promise<AppointmentBooking[]> {
   const adminSupabase = createAdminClient();
+  if (usesCloudStorage() && !adminSupabase) throw new Error("Supabase no configurado en el backend.");
   if (adminSupabase) {
     const { data, error } = await adminSupabase
       .from('cases')
@@ -83,6 +85,7 @@ export async function getAppointmentBookings(): Promise<AppointmentBooking[]> {
 // 2. Obtener un caso por ID o por Código de Caso
 export async function getCaseById(idOrCode: string): Promise<CaseRecord | null> {
   const adminSupabase = createAdminClient();
+  if (usesCloudStorage() && !adminSupabase) throw new Error("Supabase no configurado en el backend.");
   if (adminSupabase) {
     try {
       const { data, error } = await adminSupabase
@@ -151,6 +154,7 @@ export async function createCaseRecord(
   };
 
   const adminSupabase = createAdminClient();
+  if (usesCloudStorage() && !adminSupabase) throw new Error("Supabase no configurado en el backend.");
   if (adminSupabase && !persistedInSupabase) {
     try {
       const { data: dbCase, error: caseError } = await adminSupabase
@@ -189,7 +193,6 @@ export async function createCaseRecord(
     const current = ensureLocalStore();
     const updated = [newRecord, ...current.filter((c) => c.id !== newRecord.id && c.case_code !== newRecord.case_code)];
     saveLocalStore(updated);
-
   }
   return newRecord;
 }
@@ -197,6 +200,7 @@ export async function createCaseRecord(
 // 4. Actualizar estado de caso
 export async function updateCaseStatus(id: string, status: CaseStatus): Promise<boolean> {
   const adminSupabase = createAdminClient();
+  if (usesCloudStorage() && !adminSupabase) throw new Error("Supabase no configurado en el backend.");
   if (adminSupabase) {
     try {
       const { data, error } = await adminSupabase.from('cases').update({ status }).eq('id', id).select('id').maybeSingle();
@@ -228,6 +232,7 @@ export async function updateCaseAppointmentStatus(
   if (!existing?.appointment_requested) return false;
   if ((existing.appointment_status || 'pendiente') === status) return true;
   const adminSupabase = createAdminClient();
+  if (usesCloudStorage() && !adminSupabase) throw new Error("Supabase no configurado en el backend.");
   if (adminSupabase) {
     const { error } = await adminSupabase
       .from('cases')
@@ -257,6 +262,7 @@ export async function updateCaseAppointmentTime(
   if (existing.preferred_time_slot === timeSlot) return true;
 
   const adminSupabase = createAdminClient();
+  if (usesCloudStorage() && !adminSupabase) throw new Error("Supabase no configurado en el backend.");
   if (adminSupabase) {
     const { data, error } = await adminSupabase
       .from('cases')
@@ -296,6 +302,7 @@ export async function addCaseNote(
   };
 
   const adminSupabase = createAdminClient();
+  if (usesCloudStorage() && !adminSupabase) throw new Error("Supabase no configurado en el backend.");
   if (adminSupabase) {
     try {
       const { data, error } = await adminSupabase
@@ -331,8 +338,7 @@ export async function addCaseNote(
       current[idx].notes = [newNote, ...(current[idx].notes || [])];
       current[idx].internal_notes = newNote.content;
       saveLocalStore(current);
-  }
-
+    }
   }
   return newNote;
 }
@@ -340,6 +346,7 @@ export async function addCaseNote(
 // 6. Eliminar un caso
 export async function deleteCaseRecord(id: string): Promise<boolean> {
   const adminSupabase = createAdminClient();
+  if (usesCloudStorage() && !adminSupabase) throw new Error("Supabase no configurado en el backend.");
   if (adminSupabase) {
     try {
       const { error } = await adminSupabase.from('cases').delete().eq('id', id);
