@@ -1,3 +1,4 @@
+import { getRequestIp } from '../services/request-ip';
 import { Router, Request, Response } from 'express';
 import multer from 'multer';
 import { createAdminClient } from '../services/supabase-admin';
@@ -7,9 +8,10 @@ import {
   ALLOWED_EXTENSIONS,
   ALLOWED_FILE_TYPES,
   MAX_FILE_SIZE,
+  MAX_TOTAL_FILE_SIZE,
   MAX_FILES_COUNT,
 } from '../validations/case';
-import { checkIpRateLimit } from '../services/rate-limit';
+import { consumeIpRateLimit } from '../services/rate-limit';
 import { sendCaseNotificationEmail } from '../services/email';
 import { isAppointmentSlotAvailable } from '../services/appointments-store';
 import { TimeSlot } from '../types';
@@ -30,11 +32,12 @@ function generateCaseCode(): string {
   return `CAS-${year}-${randomUUID().replace(/-/g, '').slice(0, 12).toUpperCase()}`;
 }
 
-router.post('/', (req, res, next) => {
-    const ip = req.ip || req.socket.remoteAddress || '127.0.0.1';
+router.post('/', async (req, res, next) => {
+  try {
+    const ip = getRequestIp(req);
     const configuredLimit = Number(process.env.RATE_LIMIT_MAX_PER_HOUR || 5);
     const limit = Number.isInteger(configuredLimit) && configuredLimit > 0 ? configuredLimit : 5;
-    const rateLimit = checkIpRateLimit(ip, limit, 60 * 60 * 1000);
+    const rateLimit = await consumeIpRateLimit(ip, limit, 60 * 60 * 1000);
     if (!rateLimit.allowed) {
       res.status(429).json({
         error: `Ha alcanzado el límite de envíos de consultas desde su conexión. Por favor intente de nuevo en ${rateLimit.resetInMinutes} minutos o escríbanos directamente al WhatsApp.`,
@@ -42,9 +45,10 @@ router.post('/', (req, res, next) => {
       return;
     }
     next();
+  } catch (error) { next(error); }
   }, upload.array('files', MAX_FILES_COUNT), serializeAppointments(async (req: Request, res: Response): Promise<void> => {
   try {
-    const ip = req.ip || req.socket.remoteAddress || '127.0.0.1';
+    const ip = getRequestIp(req);
     const body = req.body || {};
     const rawData = {
       fullName: (body.fullName as string) || '',
@@ -109,11 +113,15 @@ router.post('/', (req, res, next) => {
       return;
     }
 
+    if (files.reduce((total, file) => total + file.size, 0) > MAX_TOTAL_FILE_SIZE) {
+      res.status(400).json({ error: 'Los documentos juntos no pueden superar 4 MB.' });
+      return;
+    }
     const validFiles: Express.Multer.File[] = [];
     for (const file of files) {
       if (file && file.size > 0) {
         if (file.size > MAX_FILE_SIZE) {
-          res.status(400).json({ error: `El archivo "${file.originalname}" supera el tamaño máximo permitido de 10 MB.` });
+          res.status(400).json({ error: `El archivo "${file.originalname}" supera el tamaño máximo permitido de 4 MB.` });
           return;
         }
 
@@ -166,6 +174,10 @@ router.post('/', (req, res, next) => {
         .select('id')
         .single();
 
+      if (caseInsertError?.code === '23505' || caseInsertError?.code === '23P01') {
+        res.status(409).json({ error: 'Esa hora ya no está disponible. Seleccione otra.' });
+        return;
+      }
       if (caseInsertError || !caseRecord) throw new Error('No se pudo registrar el caso en la base de datos.');
       if (!caseInsertError && caseRecord) {
         persistedInSupabase = true;
@@ -227,11 +239,11 @@ router.post('/', (req, res, next) => {
       filesMeta,
       persistedInSupabase
     );
-    queueAppointmentNotifications(savedCase, 'creada');
+    await queueAppointmentNotifications(savedCase, 'creada');
 
     // 7. Send email notification
     try {
-      if (!validatedData.appointmentRequested) void sendCaseNotificationEmail({
+      if (!validatedData.appointmentRequested) await sendCaseNotificationEmail({
         caseCode,
         fullName: validatedData.fullName,
         phone: validatedData.phone,

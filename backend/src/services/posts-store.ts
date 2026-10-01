@@ -1,3 +1,4 @@
+import { usesCloudStorage } from './deployment';
 import { readLocalRecords, writeLocalRecords } from './local-json-store';
 import path from 'path';
 import { randomUUID } from 'node:crypto';
@@ -26,7 +27,7 @@ export async function getAllPosts(): Promise<BlogPost[]> {
         .order('created_at', { ascending: false });
 
       if (!error && data) {
-        saveLocalStore(data as BlogPost[]);
+        if (!usesCloudStorage()) saveLocalStore(data as BlogPost[]);
         return data as BlogPost[];
       }
     } catch (e) {
@@ -159,10 +160,12 @@ export async function createPost(postData: Partial<BlogPost>): Promise<BlogPost>
     }
   }
 
-  const current = ensureLocalStore();
-  const updated = [newPost, ...current.filter((p) => p.slug !== newPost.slug)];
-  saveLocalStore(updated);
+  if (!usesCloudStorage()) {
+    const current = ensureLocalStore();
+    const updated = [newPost, ...current.filter((p) => p.slug !== newPost.slug)];
+    saveLocalStore(updated);
 
+  }
   return newPost;
 }
 
@@ -203,8 +206,10 @@ export async function updatePost(id: string, postData: Partial<BlogPost>): Promi
     }
   }
 
-  const current = ensureLocalStore();
-  saveLocalStore([updated, ...current.filter((p) => p.id !== existing.id)]);
+  if (!usesCloudStorage()) {
+    const current = ensureLocalStore();
+    saveLocalStore([updated, ...current.filter((p) => p.id !== existing.id)]);
+  }
   return updated;
 }
 
@@ -223,8 +228,10 @@ export async function deletePost(id: string): Promise<boolean> {
     }
   }
 
-  const current = ensureLocalStore();
-  const updated = current.filter((p) => p.id !== existing.id);
-  saveLocalStore(updated);
+  if (!usesCloudStorage()) {
+    const current = ensureLocalStore();
+    const updated = current.filter((p) => p.id !== existing.id);
+    saveLocalStore(updated);
+  }
   return true;
 }

@@ -46,6 +46,8 @@ export async function sendCaseNotificationEmail(data: CaseEmailNotificationData)
         user,
         pass,
       },
+      connectionTimeout: 10000,
+      socketTimeout: 15000,
     });
 
     const timeSlotLabel = data.preferredTimeSlot

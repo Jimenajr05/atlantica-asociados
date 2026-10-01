@@ -71,7 +71,7 @@ test('revisión: autorización, actualizaciones parciales, caché y almacenamien
     process.env.NODE_ENV = 'production';
     for (const route of ['/admin/posts', '/admin/cases']) assert.equal((await request(route)).status, 503);
     let role = 'staff';
-    supabase.createAdminClient = () => ({ auth: { getUser: async token => ({ data: { user: token === 'valid' ? { id: 'user' } : null }, error: null }) }, from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { role }, error: null }) }) }) }) });
+    supabase.createAdminClient = () => ({ auth: { getUser: async token => ({ data: { user: token === 'valid' ? { id: 'user', email: 'infoatlantica.asociados@gmail.com' } : null }, error: null }) }, from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { role }, error: null }) }) }) }) });
     for (const [route, method, body] of [
       ['/admin/posts', 'GET'], ['/admin/posts', 'POST', {}], ['/admin/posts/id', 'PUT', {}], ['/admin/posts/id', 'DELETE'],
       ['/admin/cases', 'GET'], ['/admin/cases/id/status', 'PATCH', {}], ['/admin/cases/id/notes', 'POST', {}],
@@ -106,6 +106,15 @@ test('revisión: CORS, límites por IP y escape HTML en correos', async () => {
   const url = `http://127.0.0.1:${server.address().port}`;
   const nodemailer = require('../node_modules/nodemailer');
   const originalTransport = nodemailer.createTransport;
+  const supabase = require('../dist/services/supabase-admin');
+  const originalClient = supabase.createAdminClient;
+  const counts = new Map();
+  supabase.createAdminClient = () => ({ rpc: async (name, args) => {
+    assert.equal(name, 'consume_submission_limit');
+    const count = (counts.get(args.rate_key) || 0) + 1;
+    counts.set(args.rate_key, count);
+    return { data: [{ allowed: count <= args.max_requests, remaining: Math.max(0, args.max_requests - count), reset_in_minutes: 60 }], error: null };
+  } });
   try {
     process.env.NODE_ENV = 'production';
     const blocked = await fetch(url + '/api/health', { headers: { Origin: 'https://untrusted.example' } });
@@ -127,6 +136,7 @@ test('revisión: CORS, límites por IP y escape HTML en correos', async () => {
     assert.match(mail.html, /https:\/\/wa.me\/12025550123/);
   } finally {
     nodemailer.createTransport = originalTransport;
+    supabase.createAdminClient = originalClient;
     await new Promise(resolve => server.close(resolve));
     for (const key of Object.keys(process.env)) if (!(key in originalEnvironment)) delete process.env[key];
     Object.assign(process.env, originalEnvironment);

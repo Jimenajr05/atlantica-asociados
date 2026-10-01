@@ -1,3 +1,4 @@
+import { usesCloudStorage } from './deployment';
 import { readLocalRecords, writeLocalRecords } from './local-json-store';
 import path from 'path';
 import { randomUUID } from 'node:crypto';
@@ -38,7 +39,7 @@ export async function getAllCases(): Promise<CaseRecord[]> {
         .order('created_at', { ascending: false });
 
       if (!error && data) {
-        saveLocalStore(data as CaseRecord[]);
+        if (!usesCloudStorage()) saveLocalStore(data as CaseRecord[]);
         return data as CaseRecord[];
       }
     } catch (e) {
@@ -183,11 +184,13 @@ export async function createCaseRecord(
     }
   }
 
-  // Guardar en el almacenamiento local persistente
-  const current = ensureLocalStore();
-  const updated = [newRecord, ...current.filter((c) => c.id !== newRecord.id && c.case_code !== newRecord.case_code)];
-  saveLocalStore(updated);
+  // Mantener la copia local solo en desarrollo.
+  if (!usesCloudStorage()) {
+    const current = ensureLocalStore();
+    const updated = [newRecord, ...current.filter((c) => c.id !== newRecord.id && c.case_code !== newRecord.case_code)];
+    saveLocalStore(updated);
 
+  }
   return newRecord;
 }
 
@@ -205,12 +208,14 @@ export async function updateCaseStatus(id: string, status: CaseStatus): Promise<
     }
   }
 
-  const current = ensureLocalStore();
-  const idx = current.findIndex((c) => c.id === id || c.case_code === id);
-  if (idx !== -1) {
-    current[idx].status = status;
-    saveLocalStore(current);
-    return true;
+  if (!usesCloudStorage()) {
+    const current = ensureLocalStore();
+    const idx = current.findIndex((c) => c.id === id || c.case_code === id);
+    if (idx !== -1) {
+      current[idx].status = status;
+      saveLocalStore(current);
+      return true;
+    }
   }
   return Boolean(adminSupabase);
 }
@@ -232,11 +237,13 @@ export async function updateCaseAppointmentStatus(
     if (error) throw error;
   }
 
-  const current = ensureLocalStore();
-  const record = current.find((item) => item.id === id || item.case_code === id);
-  if (record) record.appointment_status = status;
-  saveLocalStore(current);
-  queueAppointmentNotifications({ ...existing, appointment_status: status }, status, randomUUID());
+  if (!usesCloudStorage()) {
+    const current = ensureLocalStore();
+    const record = current.find((item) => item.id === id || item.case_code === id);
+    if (record) record.appointment_status = status;
+    saveLocalStore(current);
+  }
+  await queueAppointmentNotifications({ ...existing, appointment_status: status }, status, randomUUID());
   return true;
 }
 
@@ -263,11 +270,13 @@ export async function updateCaseAppointmentTime(
     if (!data) return false;
   }
 
-  const current = ensureLocalStore();
-  const record = current.find((item) => item.id === id || item.case_code === id);
-  if (record) record.preferred_time_slot = timeSlot;
-  saveLocalStore(current);
-  queueAppointmentNotifications({ ...existing, preferred_time_slot: timeSlot }, 'reprogramada', randomUUID());
+  if (!usesCloudStorage()) {
+    const current = ensureLocalStore();
+    const record = current.find((item) => item.id === id || item.case_code === id);
+    if (record) record.preferred_time_slot = timeSlot;
+    saveLocalStore(current);
+  }
+  await queueAppointmentNotifications({ ...existing, preferred_time_slot: timeSlot }, 'reprogramada', randomUUID());
   return true;
 }
 
@@ -315,14 +324,16 @@ export async function addCaseNote(
     }
   }
 
-  const current = ensureLocalStore();
-  const idx = current.findIndex((c) => c.id === caseId || c.case_code === caseId);
-  if (idx !== -1) {
-    current[idx].notes = [newNote, ...(current[idx].notes || [])];
-    current[idx].internal_notes = newNote.content;
-    saveLocalStore(current);
+  if (!usesCloudStorage()) {
+    const current = ensureLocalStore();
+    const idx = current.findIndex((c) => c.id === caseId || c.case_code === caseId);
+    if (idx !== -1) {
+      current[idx].notes = [newNote, ...(current[idx].notes || [])];
+      current[idx].internal_notes = newNote.content;
+      saveLocalStore(current);
   }
 
+  }
   return newNote;
 }
 
@@ -339,8 +350,10 @@ export async function deleteCaseRecord(id: string): Promise<boolean> {
     }
   }
 
-  const current = ensureLocalStore();
-  const updated = current.filter((c) => c.id !== id && c.case_code !== id);
-  saveLocalStore(updated);
+  if (!usesCloudStorage()) {
+    const current = ensureLocalStore();
+    const updated = current.filter((c) => c.id !== id && c.case_code !== id);
+    saveLocalStore(updated);
+  }
   return true;
 }

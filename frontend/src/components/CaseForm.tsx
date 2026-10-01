@@ -4,6 +4,7 @@ import { getWhatsAppCustomUrl } from '@/content/company';
 import { SERVICES } from '@/content/services';
 import {
   MAX_FILES_COUNT,
+  MAX_TOTAL_FILE_SIZE,
   validateClientFile
 } from '@/lib/validations/case';
 import { AppointmentDayAvailability, TimeSlot } from '@/types';
@@ -164,6 +165,10 @@ export function CaseForm() {
       }
     }
 
+    if ([...files, ...selectedFiles].reduce((total, file) => total + file.size, 0) > MAX_TOTAL_FILE_SIZE) {
+      setFileError('Los documentos juntos no pueden superar 4 MB. Reduzca el tamaño de los archivos.');
+      return;
+    }
     setFiles((prev) => [...prev, ...selectedFiles]);
     e.target.value = ''; // Reset input para permitir reelección
   };
@@ -239,7 +244,9 @@ export function CaseForm() {
         formData.append('files', file);
       });
 
-      const response = await fetch('/api/cases', {
+      // En producción se envía directamente al backend para conservar la IP del cliente.
+      const apiOrigin = (process.env.NEXT_PUBLIC_BACKEND_URL || '').replace(/\/$/, '');
+      const response = await fetch(`${apiOrigin}/api/cases`, {
         method: 'POST',
         body: formData,
       });
@@ -479,10 +486,10 @@ export function CaseForm() {
         />
       </div>
 
-      {/* Adjuntar Documentos (Opcional - Máximo 5 archivos, 10MB c/u) */}
+      {/* Adjuntar documentos: hasta 5 archivos y 4 MB en total. */}
       <div className="space-y-2">
         <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-          Adjuntar documentos o fotos <span className="text-slate-400 font-normal">(Opcional, máx. 5 archivos de 10 MB)</span>
+          Adjuntar documentos o fotos <span className="text-slate-400 font-normal">(Opcional, máx. 5 archivos, 4 MB en total)</span>
         </label>
 
         <div className="border-2 border-dashed border-slate-300 hover:border-dorado rounded-xl p-4 sm:p-6 text-center transition-colors bg-slate-50/60">
@@ -491,7 +498,7 @@ export function CaseForm() {
             Haga clic para seleccionar o arrastre sus archivos aquí
           </p>
           <p className="text-[11px] text-slate-400 mt-1">
-            Formatos admitidos: PDF, JPG, PNG, DOC y DOCX (Hasta 10 MB por archivo).
+            Formatos admitidos: PDF, JPG, PNG, DOC y DOCX (Hasta 4 MB entre todos los archivos).
           </p>
           <input
             type="file"

@@ -1,4 +1,21 @@
-// In-memory rate limiter for backend
+import { createHash } from 'node:crypto';
+import { createAdminClient } from './supabase-admin';
+import { usesCloudStorage } from './deployment';
+
+// En Vercel el contador debe compartirse entre instancias.
+export async function consumeIpRateLimit(ip: string, limit = 5, windowMs = 3600000) {
+  if (!usesCloudStorage()) return checkIpRateLimit(ip, limit, windowMs);
+  const client = createAdminClient();
+  if (!client) throw new Error('Supabase no configurado');
+  const { data, error } = await client.rpc('consume_submission_limit', {
+    rate_key: createHash('sha256').update(ip).digest('hex'),
+    max_requests: limit,
+    window_ms: windowMs,
+  });
+  if (error || !data?.[0]) throw new Error('No se pudo verificar el límite de envíos.');
+  return { allowed: data[0].allowed, remaining: data[0].remaining, resetInMinutes: data[0].reset_in_minutes };
+}
+
 interface RateLimitRecord {
   count: number;
   resetTime: number;

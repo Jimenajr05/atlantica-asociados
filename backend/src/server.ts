@@ -13,7 +13,10 @@ import adminCasesRouter from './routes/admin-cases';
 import postsRouter from './routes/posts';
 import adminPostsRouter from './routes/admin-posts';
 import appointmentsRouter from './routes/appointments';
-import { startNotificationWorker } from './services/appointment-notifications';
+import { startNotificationWorker, processNotificationQueue } from './services/appointment-notifications';
+import { createAdminClient } from './services/supabase-admin';
+import { usesCloudStorage } from './services/deployment';
+import { timingSafeEqual } from 'node:crypto';
 
 const app = express();
 // Configurar solo los proxies conocidos; no confiar directamente en cabeceras del cliente.
@@ -46,6 +49,29 @@ app.use(
 app.use(express.json({ limit: '15mb' }));
 app.use(express.urlencoded({ extended: true, limit: '15mb' }));
 
+app.use((_req, res, next) => {
+  if (usesCloudStorage() && !createAdminClient()) {
+    res.status(503).json({ error: 'Configure Supabase antes de recibir solicitudes.' });
+    return;
+  }
+  next();
+});
+
+// Vercel Cron invoca este endpoint; la cola vive en Supabase.
+app.get('/api/internal/notifications', async (req, res, next) => {
+  const secret = process.env.CRON_SECRET;
+  const provided = Buffer.from(req.get('authorization') || '');
+  const expected = Buffer.from(`Bearer ${secret || ''}`);
+  if (!secret || provided.length !== expected.length || !timingSafeEqual(provided, expected)) {
+    res.status(401).json({ error: 'No autorizado.' });
+    return;
+  }
+  try {
+    await processNotificationQueue();
+    res.json({ success: true });
+  } catch (error) { next(error); }
+});
+
 // Health Check
 app.get('/api/health', (_req: Request, res: Response) => {
   res.json({
@@ -77,7 +103,7 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   });
 });
 
-if (process.env.NODE_ENV !== 'test') {
+if (process.env.NODE_ENV !== 'test' && process.env.VERCEL !== '1') {
   startNotificationWorker();
   app.listen(PORT, () => {
     console.log(`🚀 [BACKEND] Servidor ejecutándose en http://localhost:${PORT}`);

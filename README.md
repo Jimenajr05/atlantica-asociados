@@ -4,6 +4,14 @@ Sitio web oficial, plataforma de recepción de casos y sistema de gestión de co
 
 ---
 
+## Publicación
+
+Para publicar con **Vercel + Supabase**, el dominio existente y sin Render,
+seguir [DEPLOYMENT.md](DEPLOYMENT.md). La página y la API Express se alojan
+en dos proyectos Vercel. Supabase conserva datos, adjuntos y notificaciones.
+En producción el almacenamiento local está deshabilitado. El formulario admite
+hasta cinco archivos con 4 MB en total.
+
 ## 🏛️ Arquitectura Desacoplada (Frontend & Backend)
 
 El proyecto se encuentra modularizado en dos aplicaciones independientes y autónomas:
@@ -71,8 +79,8 @@ Utilice Node.js 22.18 o posterior. Ejecute `npm run typecheck` y `npm test` para
 - **Servidor**: Node.js + Express + TypeScript (`tsx`).
 - **Validaciones**: Zod (esquemas de consulta y validación de archivos).
 - **Procesamiento de Archivos**: Multer con almacenamiento en memoria para reenvío seguro a Supabase Storage.
-- **Seguridad**: Limitador de tasa por IP en memoria (`rate-limit`), Honeypot anti-spam, CORS configurado.
-- **Persistencia Híbrida**: Soporta Supabase (PostgreSQL + RLS + Storage) con fallback automático al almacén local en `backend/data/*.json` para desarrollo sin dependencias externas.
+- **Seguridad**: Limitador por IP compartido en Supabase en producción y en memoria en desarrollo, Honeypot anti-spam, CORS configurado.
+- **Persistencia**: Supabase (PostgreSQL + RLS + Storage) en producción; almacenamiento local en `backend/data/*.json` únicamente para desarrollo y pruebas.
 - **Comunicaciones**: Nodemailer con plantillas HTML profesionales para notificaciones instantáneas de casos.
 
 ### Frontend (`/frontend`)

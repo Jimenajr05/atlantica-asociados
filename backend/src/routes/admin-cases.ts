@@ -76,6 +76,10 @@ router.patch('/:id/appointment', serializeAppointments(async (req: Request, res:
 
     res.json({ success: true, status });
   } catch (error: any) {
+    if (error.code === '23505' || error.code === '23P01') {
+      res.status(409).json({ error: 'Esa hora ya no está disponible. Seleccione otra.' });
+      return;
+    }
     res.status(500).json({ error: error.message || 'No se pudo actualizar la cita.' });
   }
 }));

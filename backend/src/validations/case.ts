@@ -10,7 +10,8 @@ export const ALLOWED_FILE_TYPES = [
 ];
 
 export const ALLOWED_EXTENSIONS = ['.pdf', '.jpg', '.jpeg', '.png', '.doc', '.docx'];
-export const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+export const MAX_FILE_SIZE = 4 * 1024 * 1024;
+export const MAX_TOTAL_FILE_SIZE = MAX_FILE_SIZE; // Margen para multipart bajo el límite de Vercel.
 export const MAX_FILES_COUNT = 5;
 
 export const caseSubmissionSchema = z.object({

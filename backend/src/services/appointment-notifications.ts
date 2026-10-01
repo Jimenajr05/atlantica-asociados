@@ -1,3 +1,5 @@
+import { createAdminClient } from './supabase-admin';
+import { usesCloudStorage } from './deployment';
 import fs from 'node:fs';
 import path from 'node:path';
 import nodemailer from 'nodemailer';
@@ -6,13 +8,15 @@ import { normalizeEmail, normalizeWhatsApp } from './notification-contact';
 import { appointmentEmail, AppointmentEvent, eventLabels } from '../templates/appointment-email';
 import { whatsappTemplates } from '../templates/appointment-whatsapp';
 
-interface Job { key: string; channel: 'email' | 'whatsapp'; to: string; values: string[]; event: AppointmentEvent; office: boolean; attempts: number; next: number; state: 'pending' | 'sent' | 'failed'; }
+export interface Job { key: string; channel: 'email' | 'whatsapp'; to: string; values: string[]; event: AppointmentEvent; office: boolean; attempts: number; next: number; state: 'pending' | 'sent' | 'failed'; }
 const file = () => path.resolve(process.env.NOTIFICATION_STORE_PATH || 'data/appointment-notifications.json');
 function read(): Job[] { return fs.existsSync(file()) ? JSON.parse(fs.readFileSync(file(), 'utf8')) : []; }
 function save(jobs: Job[]) { fs.mkdirSync(path.dirname(file()), { recursive: true }); fs.writeFileSync(file() + '.tmp', JSON.stringify(jobs, null, 2)); fs.renameSync(file() + '.tmp', file()); }
 let busy = false;
 
-export function queueAppointmentNotifications(record: CaseRecord, event: AppointmentEvent, transitionId?: string) {
+export async function queueAppointmentNotifications(record: CaseRecord, event: AppointmentEvent, transitionId?: string) {
+  // El trigger guarda las notificaciones junto con la cita en Supabase.
+  if (usesCloudStorage()) return;
   try {
     if (!record.appointment_requested) return;
     const date = record.preferred_date ? new Intl.DateTimeFormat('es-CR', { timeZone: 'America/Costa_Rica', dateStyle: 'long' }).format(new Date(`${record.preferred_date}T12:00:00-06:00`)) : 'Por coordinar';
@@ -50,6 +54,23 @@ async function deliver(job: Job) {
 }
 
 export async function processNotificationQueue() {
+  if (usesCloudStorage()) {
+    const client = createAdminClient();
+    if (!client) throw new Error('Supabase no configurado');
+    const { data, error } = await client.rpc('claim_notification_jobs', { batch_size: 10 });
+    if (error) throw error;
+    await Promise.all(((data || []) as (Job & { lease_token: string })[]).map(async job => {
+      let state: Job['state'] = 'sent';
+      let next = job.next;
+      try { await deliver(job); }
+      catch { state = job.attempts >= 3 ? 'failed' : 'pending'; next = Date.now() + 1000 * 5 ** job.attempts; }
+      const { error: updateError } = await client.from('notification_jobs')
+        .update({ state, next, lease_until: 0, lease_token: null })
+        .eq('key', job.key).eq('lease_token', job.lease_token);
+      if (updateError) throw updateError;
+    }));
+    return;
+  }
   if (busy) return;
   busy = true;
   try {
