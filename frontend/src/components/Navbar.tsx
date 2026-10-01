@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-import { usePathname } from 'next/navigation';
-import { Menu, X, MessageCircle, Phone, Clock, ShieldCheck, Search } from 'lucide-react';
-import { COMPANY, WHATSAPP_URL } from '@/content/company';
-import { SearchBar } from '@/components/SearchBar';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import { SearchBar } from '@/components/SearchBar';
+import { COMPANY, WHATSAPP_URL } from '@/content/company';
+import { Clock, Menu, MessageCircle, Phone, Search, ShieldCheck, X } from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 const NAV_LINKS = [
   { name: 'Inicio', href: '/' },

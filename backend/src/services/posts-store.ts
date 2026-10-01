@@ -1,5 +1,6 @@
-import fs from 'fs';
+import { readLocalRecords, writeLocalRecords } from './local-json-store';
 import path from 'path';
+import { randomUUID } from 'node:crypto';
 import { BlogPost } from '../types';
 import { createAdminClient } from './supabase-admin';
 
@@ -7,35 +8,11 @@ const dataDir = path.resolve(process.cwd(), 'data');
 const postsFilePath = path.join(dataDir, 'posts.json');
 
 function ensureLocalStore(): BlogPost[] {
-  try {
-    if (!fs.existsSync(dataDir)) {
-      fs.mkdirSync(dataDir, { recursive: true });
-    }
-    if (!fs.existsSync(postsFilePath)) {
-      fs.writeFileSync(postsFilePath, '[]', 'utf-8');
-      return [];
-    }
-    const content = fs.readFileSync(postsFilePath, 'utf-8');
-    const parsed = JSON.parse(content);
-    if (Array.isArray(parsed)) {
-      return parsed;
-    }
-    return [];
-  } catch (err) {
-    console.error('Error inicializando almacenamiento local de posts:', err);
-    return [];
-  }
+  return readLocalRecords<BlogPost>(postsFilePath);
 }
 
 function saveLocalStore(posts: BlogPost[]) {
-  try {
-    if (!fs.existsSync(dataDir)) {
-      fs.mkdirSync(dataDir, { recursive: true });
-    }
-    fs.writeFileSync(postsFilePath, JSON.stringify(posts, null, 2), 'utf-8');
-  } catch (err) {
-    console.error('Error guardando en archivo local de posts:', err);
-  }
+  writeLocalRecords(postsFilePath, posts);
 }
 
 // 1. Obtener todos los artículos (Admin: publicados y borradores)
@@ -72,7 +49,6 @@ export async function getPublicPosts(): Promise<BlogPost[]> {
         .order('published_at', { ascending: false });
 
       if (!error && data) {
-        saveLocalStore(data as BlogPost[]);
         return data as BlogPost[];
       }
     } catch (e) {
@@ -93,10 +69,10 @@ export async function getPostBySlug(slug: string): Promise<BlogPost | null> {
         .from('posts')
         .select('*')
         .eq('slug', slug)
-        .single();
+        .maybeSingle();
 
-      if (!error && data) {
-        return data as BlogPost;
+      if (!error) {
+        return data as BlogPost | null;
       }
     } catch (e) {
       // Fallback
@@ -116,11 +92,11 @@ export async function getPostById(id: string): Promise<BlogPost | null> {
       const { data, error } = await adminSupabase
         .from('posts')
         .select('*')
-        .eq('id', id)
-        .single();
+        .eq(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id) ? 'id' : 'slug', id)
+        .maybeSingle();
 
-      if (!error && data) {
-        return data as BlogPost;
+      if (!error) {
+        return data as BlogPost | null;
       }
     } catch (e) {
       // Fallback
@@ -134,8 +110,10 @@ export async function getPostById(id: string): Promise<BlogPost | null> {
 
 // 5. Crear un nuevo artículo
 export async function createPost(postData: Partial<BlogPost>): Promise<BlogPost> {
+  const existing = await getPostBySlug(postData.slug || '');
+  if (existing) throw new Error('Ya existe una publicación con ese slug.');
   const now = new Date().toISOString();
-  const newId = `post-${Date.now()}`;
+  const newId = `post-${randomUUID()}`;
   const newPost: BlogPost = {
     id: newId,
     slug: postData.slug || `articulo-${Date.now()}`,
@@ -191,6 +169,21 @@ export async function createPost(postData: Partial<BlogPost>): Promise<BlogPost>
 // 6. Actualizar un artículo existente
 export async function updatePost(id: string, postData: Partial<BlogPost>): Promise<BlogPost | null> {
   const now = new Date().toISOString();
+  const existing = await getPostById(id);
+  if (!existing) return null;
+  if (postData.slug && postData.slug !== existing.slug) {
+    const duplicate = await getPostBySlug(postData.slug);
+    if (duplicate && duplicate.id !== existing.id) throw new Error('Ya existe una publicación con ese slug.');
+  }
+  const updated: BlogPost = {
+    ...existing,
+    ...postData,
+    updated_at: now,
+    published_at: (postData.published ?? existing.published) ? (existing.published_at || now) : null,
+    reading_time_minutes: postData.content !== undefined
+      ? Math.max(2, Math.ceil(postData.content.split(/\s+/).length / 200))
+      : existing.reading_time_minutes,
+  };
   const adminSupabase = createAdminClient();
 
   if (adminSupabase) {
@@ -198,12 +191,11 @@ export async function updatePost(id: string, postData: Partial<BlogPost>): Promi
       const payload: any = {
         ...postData,
         updated_at: now,
+        published_at: updated.published_at,
+        reading_time_minutes: updated.reading_time_minutes,
       };
-      if (postData.published) {
-        payload.published_at = postData.published_at || now;
-      }
 
-      const { error } = await adminSupabase.from('posts').update(payload).eq('id', id);
+      const { error } = await adminSupabase.from('posts').update(payload).eq('id', existing.id);
       if (error) throw error;
     } catch (err) {
       console.error('Error actualizando en Supabase:', err);
@@ -212,37 +204,27 @@ export async function updatePost(id: string, postData: Partial<BlogPost>): Promi
   }
 
   const current = ensureLocalStore();
-  const idx = current.findIndex((p) => p.id === id || p.slug === id);
-  if (idx !== -1) {
-    current[idx] = {
-      ...current[idx],
-      ...postData,
-      updated_at: now,
-      published_at: postData.published ? (current[idx].published_at || now) : null,
-      reading_time_minutes: postData.content
-        ? Math.max(2, Math.ceil(postData.content.split(/\s+/).length / 200))
-        : current[idx].reading_time_minutes,
-    };
-    saveLocalStore(current);
-    return current[idx];
-  }
-
-  return null;
+  saveLocalStore([updated, ...current.filter((p) => p.id !== existing.id)]);
+  return updated;
 }
 
 // 7. Eliminar un artículo
 export async function deletePost(id: string): Promise<boolean> {
+  const existing = await getPostById(id);
+  if (!existing) return false;
   const adminSupabase = createAdminClient();
   if (adminSupabase) {
     try {
-      await adminSupabase.from('posts').delete().eq('id', id);
+      const { error } = await adminSupabase.from('posts').delete().eq('id', existing.id);
+      if (error) throw error;
     } catch (err) {
       console.error('Error eliminando en Supabase:', err);
+      throw new Error('No se pudo eliminar la publicación en la base de datos.');
     }
   }
 
   const current = ensureLocalStore();
-  const updated = current.filter((p) => p.id !== id && p.slug !== id);
+  const updated = current.filter((p) => p.id !== existing.id);
   saveLocalStore(updated);
   return true;
 }

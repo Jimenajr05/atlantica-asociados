@@ -1,5 +1,4 @@
-import React from 'react';
-import { MessageSquareText, SearchCheck, FileSignature, CheckCircle } from 'lucide-react';
+import { CheckCircle, FileSignature, MessageSquareText, SearchCheck } from 'lucide-react';
 
 export interface StepItem {
   number: number;

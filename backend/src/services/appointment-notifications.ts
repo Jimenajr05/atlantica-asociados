@@ -12,7 +12,7 @@ function read(): Job[] { return fs.existsSync(file()) ? JSON.parse(fs.readFileSy
 function save(jobs: Job[]) { fs.mkdirSync(path.dirname(file()), { recursive: true }); fs.writeFileSync(file() + '.tmp', JSON.stringify(jobs, null, 2)); fs.renameSync(file() + '.tmp', file()); }
 let busy = false;
 
-export function queueAppointmentNotifications(record: CaseRecord, event: AppointmentEvent) {
+export function queueAppointmentNotifications(record: CaseRecord, event: AppointmentEvent, transitionId?: string) {
   try {
     if (!record.appointment_requested) return;
     const date = record.preferred_date ? new Intl.DateTimeFormat('es-CR', { timeZone: 'America/Costa_Rica', dateStyle: 'long' }).format(new Date(`${record.preferred_date}T12:00:00-06:00`)) : 'Por coordinar';
@@ -21,7 +21,7 @@ export function queueAppointmentNotifications(record: CaseRecord, event: Appoint
     const add = (channel: Job['channel'], contact: string, office = false) => {
       try {
         const to = channel === 'email' ? normalizeEmail(contact) : normalizeWhatsApp(contact);
-        const key = [record.id, event, record.preferred_date, record.preferred_time_slot, channel, office].join(':');
+        const key = [record.id, event, record.preferred_date, record.preferred_time_slot, channel, office, ...(transitionId ? [transitionId] : [])].join(':');
         if (!jobs.some(j => j.key === key)) jobs.push({ key, channel, to, values, event, office, attempts: 0, next: Date.now(), state: 'pending' });
       } catch { console.error('[cita-notificación] Contacto inválido', { caseId: record.id, channel, office }); }
     };

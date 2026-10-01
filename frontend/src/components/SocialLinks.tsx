@@ -1,4 +1,3 @@
-import React from 'react';
 import { COMPANY } from '@/content/company';
 
 function FacebookIcon({ className = "w-4 h-4" }: { className?: string }) {

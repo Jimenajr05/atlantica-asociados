@@ -15,6 +15,9 @@ import { isAppointmentSlotAvailable } from '../services/appointments-store';
 import { TimeSlot } from '../types';
 import { normalizeEmail, normalizeWhatsApp } from '../services/notification-contact';
 import { queueAppointmentNotifications } from '../services/appointment-notifications';
+import { serializeAppointments } from '../middleware/serialize-appointments';
+import { saveLocalAttachment } from '../services/local-attachments';
+import { randomUUID } from 'node:crypto';
 
 const router = Router();
 const upload = multer({
@@ -24,26 +27,24 @@ const upload = multer({
 
 function generateCaseCode(): string {
   const year = new Date().getFullYear();
-  const randomNum = Math.floor(1000 + Math.random() * 9000);
-  return `CAS-${year}-${randomNum}`;
+  return `CAS-${year}-${randomUUID().replace(/-/g, '').slice(0, 12).toUpperCase()}`;
 }
 
-router.post('/', upload.array('files', MAX_FILES_COUNT), async (req: Request, res: Response): Promise<void> => {
-  try {
-    // 1. IP rate limiting
-    const ip =
-      (req.headers['x-forwarded-for'] as string)?.split(',')[0].trim() ||
-      req.socket.remoteAddress ||
-      '127.0.0.1';
-
-    const rateLimit = checkIpRateLimit(ip, 5, 60 * 60 * 1000);
+router.post('/', (req, res, next) => {
+    const ip = req.ip || req.socket.remoteAddress || '127.0.0.1';
+    const configuredLimit = Number(process.env.RATE_LIMIT_MAX_PER_HOUR || 5);
+    const limit = Number.isInteger(configuredLimit) && configuredLimit > 0 ? configuredLimit : 5;
+    const rateLimit = checkIpRateLimit(ip, limit, 60 * 60 * 1000);
     if (!rateLimit.allowed) {
       res.status(429).json({
         error: `Ha alcanzado el límite de envíos de consultas desde su conexión. Por favor intente de nuevo en ${rateLimit.resetInMinutes} minutos o escríbanos directamente al WhatsApp.`,
       });
       return;
     }
-
+    next();
+  }, upload.array('files', MAX_FILES_COUNT), serializeAppointments(async (req: Request, res: Response): Promise<void> => {
+  try {
+    const ip = req.ip || req.socket.remoteAddress || '127.0.0.1';
     const body = req.body || {};
     const rawData = {
       fullName: (body.fullName as string) || '',
@@ -120,7 +121,7 @@ router.post('/', upload.array('files', MAX_FILES_COUNT), async (req: Request, re
         const hasValidExtension = ALLOWED_EXTENSIONS.includes(extension);
         const hasValidMime = ALLOWED_FILE_TYPES.includes(file.mimetype) || file.mimetype === '';
 
-        if (!hasValidExtension && !hasValidMime) {
+        if (!hasValidExtension || !hasValidMime) {
           res.status(400).json({
             error: `El archivo "${file.originalname}" no está permitido. Solo se aceptan formatos PDF, JPG, PNG, DOC y DOCX.`,
           });
@@ -133,7 +134,7 @@ router.post('/', upload.array('files', MAX_FILES_COUNT), async (req: Request, re
 
     const caseCode = generateCaseCode();
     const adminSupabase = createAdminClient();
-    let savedCaseId = `case-${Date.now()}`;
+    let savedCaseId = `case-${randomUUID()}`;
     let persistedInSupabase = false;
 
     const filesMeta = validFiles.map((f) => ({
@@ -165,6 +166,7 @@ router.post('/', upload.array('files', MAX_FILES_COUNT), async (req: Request, re
         .select('id')
         .single();
 
+      if (caseInsertError || !caseRecord) throw new Error('No se pudo registrar el caso en la base de datos.');
       if (!caseInsertError && caseRecord) {
         persistedInSupabase = true;
         savedCaseId = caseRecord.id;
@@ -183,16 +185,25 @@ router.post('/', upload.array('files', MAX_FILES_COUNT), async (req: Request, re
             });
 
           if (!storageError) {
-            await adminSupabase.from('case_files').insert({
+            const { error: metadataError } = await adminSupabase.from('case_files').insert({
               case_id: savedCaseId,
               file_name: file.originalname,
               file_path: filePath,
               file_size: file.size,
               mime_type: file.mimetype || 'application/octet-stream',
             });
+            if (metadataError) throw new Error('No se pudieron registrar los documentos del caso.');
+            const index = validFiles.indexOf(file);
+            filesMeta[index].path = filePath;
+          } else {
+            throw new Error('No se pudo guardar un documento adjunto. El caso fue registrado; contacte al despacho para reenviar el documento.');
           }
         }
       }
+    }
+
+    if (!adminSupabase) {
+      validFiles.forEach((file, index) => { filesMeta[index].path = saveLocalAttachment(savedCaseId, file); });
     }
 
     // 6. Persist to store
@@ -248,6 +259,6 @@ router.post('/', upload.array('files', MAX_FILES_COUNT), async (req: Request, re
       error: error.message || 'Ocurrió un error inesperado al procesar su solicitud.',
     });
   }
-});
+}));
 
 export default router;

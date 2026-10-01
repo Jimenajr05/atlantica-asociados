@@ -12,10 +12,14 @@ import { APPOINTMENT_TIME_SLOTS, AppointmentStatus, CaseStatus, TimeSlot } from 
 import { requireAdmin } from '../middleware/require-admin';
 import { updateCaseAppointmentStatus } from '../services/cases-store';
 import { isAppointmentSlotAvailable } from '../services/appointments-store';
+import { serializeAppointments } from '../middleware/serialize-appointments';
+import { deleteLocalAttachments, getLocalAttachmentPath } from '../services/local-attachments';
+import fs from 'node:fs';
 
 const router = Router();
+router.use(requireAdmin);
 
-router.patch('/:id/appointment', requireAdmin, async (req: Request, res: Response): Promise<void> => {
+router.patch('/:id/appointment', serializeAppointments(async (req: Request, res: Response): Promise<void> => {
   try {
     const preferredTimeSlot = req.body?.preferredTimeSlot as TimeSlot | undefined;
     if (preferredTimeSlot !== undefined) {
@@ -56,6 +60,14 @@ router.patch('/:id/appointment', requireAdmin, async (req: Request, res: Respons
       return;
     }
 
+    const caseItem = await getCaseById(req.params.id);
+    if (caseItem?.appointment_status === 'cancelada' && status !== 'cancelada') {
+      if (!caseItem.preferred_date || !caseItem.preferred_time_slot ||
+          !(await isAppointmentSlotAvailable(caseItem.preferred_date, caseItem.preferred_time_slot as TimeSlot, { excludeBookingId: caseItem.id }))) {
+        res.status(409).json({ error: 'La hora de la cita ya no está disponible. Asigne otra hora antes de reactivarla.' });
+        return;
+      }
+    }
     const updated = await updateCaseAppointmentStatus(req.params.id, status);
     if (!updated) {
       res.status(404).json({ error: 'No se encontró la solicitud de cita.' });
@@ -66,7 +78,7 @@ router.patch('/:id/appointment', requireAdmin, async (req: Request, res: Respons
   } catch (error: any) {
     res.status(500).json({ error: error.message || 'No se pudo actualizar la cita.' });
   }
-});
+}));
 
 // GET /api/admin/cases
 router.get('/', async (_req: Request, res: Response): Promise<void> => {
@@ -90,7 +102,10 @@ router.patch('/:id/status', async (req: Request, res: Response): Promise<void> =
       return;
     }
 
-    await updateCaseStatus(id, status);
+    if (!(await updateCaseStatus(id, status))) {
+      res.status(404).json({ error: 'Caso no encontrado.' });
+      return;
+    }
     res.json({ success: true, status });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -108,7 +123,10 @@ router.post('/:id/notes', async (req: Request, res: Response): Promise<void> => 
       return;
     }
 
-    const note = await addCaseNote(id, content.trim(), authorEmail || 'admin');
+    if (!(await getCaseById(id))) { res.status(404).json({ error: 'Caso no encontrado.' }); return; }
+    if (content.trim().length > 5000) { res.status(400).json({ error: 'La nota no puede exceder 5000 caracteres.' }); return; }
+    const author = res.locals.adminUser?.email || (typeof authorEmail === 'string' ? authorEmail : '') || 'admin';
+    const note = await addCaseNote(id, content.trim(), author);
     res.json({ success: true, note });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -119,25 +137,50 @@ router.post('/:id/notes', async (req: Request, res: Response): Promise<void> => 
 router.delete(['/:id', '/:id/delete'], async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
+    const existing = await getCaseById(id);
+    if (!existing) { res.status(404).json({ error: 'Caso no encontrado.' }); return; }
     const adminSupabase = createAdminClient();
 
     if (adminSupabase) {
-      const { data: files } = await adminSupabase
+      const { data: files, error: filesError } = await adminSupabase
         .from('case_files')
         .select('file_path')
-        .eq('case_id', id);
+        .eq('case_id', existing.id);
+      if (filesError) throw filesError;
 
       if (files && files.length > 0) {
         const bucketName = process.env.SUPABASE_STORAGE_BUCKET || 'case-documents';
         const pathsToDelete = files.map((f: any) => f.file_path);
-        await adminSupabase.storage.from(bucketName).remove(pathsToDelete);
+        const { error: storageError } = await adminSupabase.storage.from(bucketName).remove(pathsToDelete);
+        if (storageError) throw storageError;
       }
     }
 
-    await deleteCaseRecord(id);
+    deleteLocalAttachments((existing.files || []).map((file) => file.file_path));
+    await deleteCaseRecord(existing.id);
     res.json({ success: true, message: 'Caso y archivos eliminados exitosamente.' });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/:id/files/:fileId', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const caseItem = await getCaseById(req.params.id);
+    const file = caseItem?.files?.find((item) => item.id === req.params.fileId);
+    if (!file || !file.file_path.startsWith('local/')) {
+      res.status(404).json({ error: 'Documento local no encontrado.' });
+      return;
+    }
+    const resolved = getLocalAttachmentPath(file.file_path);
+    if (!fs.existsSync(resolved)) {
+      res.status(404).json({ error: 'Documento local no encontrado.' });
+      return;
+    }
+    res.setHeader('X-File-Name', encodeURIComponent(file.file_name));
+    res.download(resolved, file.file_name);
+  } catch {
+    res.status(500).json({ error: 'No se pudo descargar el documento.' });
   }
 });
 
@@ -146,8 +189,19 @@ router.post('/:id/signed-url', async (req: Request, res: Response): Promise<void
   try {
     const { filePath } = req.body || {};
 
-    if (!filePath) {
+    if (typeof filePath !== 'string' || !filePath) {
       res.status(400).json({ error: 'Ruta de archivo no especificada.' });
+      return;
+    }
+
+    const caseItem = await getCaseById(req.params.id);
+    if (!caseItem?.files?.some((file) => file.file_path === filePath)) {
+      res.status(404).json({ error: 'El archivo no pertenece a este caso.' });
+      return;
+    }
+    const localFile = caseItem.files.find((file) => file.file_path === filePath && file.file_path.startsWith('local/'));
+    if (localFile) {
+      res.json({ success: true, signedUrl: `/api/admin/cases/${encodeURIComponent(caseItem.id)}/files/${encodeURIComponent(localFile.id)}` });
       return;
     }
 

@@ -1,21 +1,17 @@
-import React from 'react';
-import type { Metadata } from 'next';
-import {
-  Mail,
-  Clock,
-  ShieldCheck,
-  Phone,
-  HelpCircle,
-  CheckCircle2,
-  Receipt,
-  FileCheck2,
-} from 'lucide-react';
-import { COMPANY, WHATSAPP_URL } from '@/content/company';
 import { CaseForm } from '@/components/CaseForm';
 import { PageHero } from '@/components/PageHero';
 import { SocialLinks } from '@/components/SocialLinks';
+import { COMPANY, WHATSAPP_URL } from '@/content/company';
+import {
+  Clock,
+  Mail,
+  Phone,
+  Receipt
+} from 'lucide-react';
+import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
+  alternates: { canonical: '/contacto' },
   title: 'Contacto y Consulta | ATLÁNTICA & ASOCIADOS',
   description:
     'Contáctenos por WhatsApp al 6002-4545 / 8451-1030 o envíe su caso en línea. Asesoría, gestión institucional y acompañamiento ciudadano en Costa Rica.',

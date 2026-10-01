@@ -1,24 +1,15 @@
-import React from 'react';
-import type { Metadata } from 'next';
-import Link from 'next/link';
+import { PageHero } from '@/components/PageHero';
+import { COMPANY } from '@/content/company';
 import {
   Clock,
-  ShieldCheck,
-  UserCheck,
-  Building,
-  HeartHandshake,
-  MessageCircle,
   FileText,
-  Receipt,
-  CheckCircle2,
   Phone,
-  Sparkles,
-  Award,
+  Receipt
 } from 'lucide-react';
-import { COMPANY, WHATSAPP_URL } from '@/content/company';
-import { PageHero } from '@/components/PageHero';
+import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
+  alternates: { canonical: '/nosotros' },
   title: 'Nosotros | ATLÁNTICA & ASOCIADOS - Poder y Estrategia',
   description:
     'Conozca a ATLÁNTICA & ASOCIADOS, nuestra misión, visión, compromiso, valores y servicios de gestión institucional y acompañamiento ciudadano en Costa Rica.',

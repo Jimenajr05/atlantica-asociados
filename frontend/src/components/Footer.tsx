@@ -1,12 +1,11 @@
 'use client';
 
-import React from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-import { usePathname } from 'next/navigation';
-import { Phone, Mail, MessageCircle, ShieldCheck } from 'lucide-react';
-import { COMPANY, WHATSAPP_URL } from '@/content/company';
 import { SocialLinks } from '@/components/SocialLinks';
+import { COMPANY, WHATSAPP_URL } from '@/content/company';
+import { Mail, MessageCircle, Phone, ShieldCheck } from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 export function Footer() {
   const pathname = usePathname();

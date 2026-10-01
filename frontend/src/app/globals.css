@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.animate-fadeIn { animation: fadeIn 0.2s ease-out; }
+
 .home-hero { min-height: min(36rem, 80svh); }
 .home-hero-image { object-position: 55% center; }
 .home-card-grid > * { min-width: 0; }

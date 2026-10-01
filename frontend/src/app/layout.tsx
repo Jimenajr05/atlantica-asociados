@@ -1,10 +1,10 @@
-import type { Metadata } from 'next';
-import { Plus_Jakarta_Sans, Cinzel } from 'next/font/google';
-import './globals.css';
-import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
+import { Navbar } from '@/components/Navbar';
 import { WhatsAppFloatingButton } from '@/components/WhatsAppFloatingButton';
 import { COMPANY } from '@/content/company';
+import type { Metadata } from 'next';
+import { Cinzel, Plus_Jakarta_Sans } from 'next/font/google';
+import './globals.css';
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -50,9 +50,6 @@ export const metadata: Metadata = {
       follow: true,
     },
   },
-  alternates: {
-    canonical: siteUrl,
-  },
   openGraph: {
     type: 'website',
     locale: 'es_CR',
@@ -63,7 +60,7 @@ export const metadata: Metadata = {
     siteName: 'Atlántica & Asociados',
     images: [
       {
-        url: '/assets/logo.jpg',
+        url: '/assets/logo-transparent.png',
         width: 800,
         height: 800,
         alt: 'Logo oficial Atlántica & Asociados Costa Rica',
@@ -75,7 +72,7 @@ export const metadata: Metadata = {
     title: 'Atlántica & Asociados | Gestión Institucional en Costa Rica',
     description:
       'Le ayudamos a dar el primer paso ante instituciones cuando sus derechos son vulnerados.',
-    images: ['/assets/logo.jpg'],
+    images: ['/assets/logo-transparent.png'],
   },
   icons: {
     icon: '/assets/logo-icono.png',
@@ -94,7 +91,7 @@ export default function RootLayout({
     name: 'Atlántica & Asociados',
     legalName: 'Atlántica & Asociados',
     url: siteUrl,
-    logo: `${siteUrl}/assets/logo.jpg`,
+    logo: `${siteUrl}/assets/logo-transparent.png`,
     description:
       'Servicio en línea de asesoría ciudadana, redacción técnica y gestión de trámites institucionales en Costa Rica.',
     telephone: COMPANY.phoneDisplay,

@@ -12,7 +12,7 @@ El proyecto se encuentra modularizado en dos aplicaciones independientes y autó
 atlantica-asociados/
 ├── backend/                  # Servidor de API (Node.js + Express + TypeScript)
 │   ├── data/                 # Almacenamiento local persistente (cases.json, posts.json)
-│   ├── scripts/              # Scripts de siembra (seed.mjs)
+│   ├── scripts/              # Respaldo de documentos (backup-storage.mjs)
 │   ├── src/
 │   │   ├── routes/           # Rutas Express (cases, admin-cases, posts, admin-posts)
 │   │   ├── services/         # Servicios (cases-store, posts-store, email, rate-limit, supabase-admin)
@@ -46,12 +46,16 @@ atlantica-asociados/
 
 Desde la raíz del repositorio:
 
+Utilice Node.js 22.18 o posterior. Consulte [`REVISION-TECNICA.md`](REVISION-TECNICA.md) para los resultados de la revisión y las comprobaciones disponibles.
+
 | Comando | Acción |
 | :--- | :--- |
 | `npm run dev` | **Ejecuta ambos simultáneamente** (Backend en `http://localhost:5000` y Frontend en `http://localhost:3000`) |
 | `npm run dev:backend` | Ejecuta únicamente el servidor backend con recarga automática |
 | `npm run dev:frontend` | Ejecuta únicamente el cliente web Next.js |
 | `npm run build` | Compila tanto el backend (`tsc`) como el frontend (`next build`) |
+| `npm run typecheck` | Verifica tipos y detecta imports y variables sin uso en ambas aplicaciones |
+| `npm test` | Ejecuta pruebas con datos temporales y servicios de notificación simulados |
 
 ---
 
@@ -95,6 +99,8 @@ Todos los colores del sitio se controlan a través de variables CSS definidas en
 ```env
 PORT=5000
 FRONTEND_URL=http://localhost:3000
+NODE_ENV=development
+TRUST_PROXY=loopback
 
 # Supabase (Opcional - Si no se configura, usará el almacén local en backend/data/)
 NEXT_PUBLIC_SUPABASE_URL=https://tu-proyecto.supabase.co
@@ -115,7 +121,6 @@ RATE_LIMIT_MAX_PER_HOUR=5
 #### Frontend (`frontend/.env.local`):
 ```env
 BACKEND_URL=http://localhost:5000
-NEXT_PUBLIC_API_URL=http://localhost:5000/api
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 NEXT_PUBLIC_WHATSAPP_NUMBER=50660024545
 NEXT_PUBLIC_WHATSAPP_DEFAULT_MESSAGE="Hola, necesito información y asesoría sobre un trámite ante una institución."
@@ -131,6 +136,11 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=placeholder-anon-key
 2. Ejecute el script [`backend/supabase/migrations/001_initial_schema.sql`](backend/supabase/migrations/001_initial_schema.sql).
 3. Ejecute también las migraciones posteriores en orden. Para separar Blog y noticias, aplique [`004_post_categories.sql`](backend/supabase/migrations/004_post_categories.sql). Los artículos existentes quedan en Blog.
 4. Cree publicaciones desde el administrador y seleccione su tipo: Blog o Noticias. En almacenamiento local no se requiere migración.
+5. Aplique [`005_backend_only_submissions.sql`](backend/supabase/migrations/005_backend_only_submissions.sql) para que casos y documentos solo ingresen por el backend y no puedan saltarse sus validaciones usando la clave pública.
+
+Para desplegar, configure `NODE_ENV=production`, credenciales reales de Supabase y un perfil con rol `admin`. El backend valida el token y el rol en todas las rutas administrativas. Sin Supabase, el acceso local está habilitado únicamente con `NODE_ENV=development` o `test`. Configure `TRUST_PROXY` con las direcciones o redes de sus proxies de confianza; `loopback` corresponde al proxy Next.js en la misma máquina.
+
+En modo local, los adjuntos se guardan en `backend/data/case-files/` y se descargan mediante la API administrativa; este directorio debe respaldarse junto con los JSON. Los adjuntos anteriores que solo registraban metadatos no pueden recuperarse automáticamente. El almacenamiento JSON y la cola de notificaciones requieren un único proceso backend y disco persistente. Vea [`NOTIFICACIONES-Y-RESPONSIVE.md`](NOTIFICACIONES-Y-RESPONSIVE.md) para configurar SMTP y WhatsApp.
 
 ---
 

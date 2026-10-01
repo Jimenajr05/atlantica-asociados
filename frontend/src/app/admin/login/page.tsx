@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import { createClient } from '@/lib/supabase/client';
+import { AlertCircle, ArrowLeft, Loader2, Lock, Mail, ShieldCheck } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Lock, Mail, AlertCircle, ArrowLeft, Loader2, ShieldCheck } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
+import React, { useState } from 'react';
 
 export default function AdminLoginPage() {
   const router = useRouter();

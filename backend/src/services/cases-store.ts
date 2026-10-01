@@ -1,5 +1,6 @@
-import fs from 'fs';
+import { readLocalRecords, writeLocalRecords } from './local-json-store';
 import path from 'path';
+import { randomUUID } from 'node:crypto';
 import {
   AppointmentBooking,
   AppointmentStatus,
@@ -15,35 +16,11 @@ const dataDir = path.resolve(process.cwd(), 'data');
 const casesFilePath = path.join(dataDir, 'cases.json');
 
 function ensureLocalStore(): CaseRecord[] {
-  try {
-    if (!fs.existsSync(dataDir)) {
-      fs.mkdirSync(dataDir, { recursive: true });
-    }
-    if (!fs.existsSync(casesFilePath)) {
-      fs.writeFileSync(casesFilePath, '[]', 'utf-8');
-      return [];
-    }
-    const content = fs.readFileSync(casesFilePath, 'utf-8');
-    const parsed = JSON.parse(content);
-    if (Array.isArray(parsed)) {
-      return parsed;
-    }
-    return [];
-  } catch (err) {
-    console.error('Error inicializando almacenamiento local de casos:', err);
-    return [];
-  }
+  return readLocalRecords<CaseRecord>(casesFilePath);
 }
 
 function saveLocalStore(cases: CaseRecord[]) {
-  try {
-    if (!fs.existsSync(dataDir)) {
-      fs.mkdirSync(dataDir, { recursive: true });
-    }
-    fs.writeFileSync(casesFilePath, JSON.stringify(cases, null, 2), 'utf-8');
-  } catch (err) {
-    console.error('Error guardando en archivo local de casos:', err);
-  }
+  writeLocalRecords(casesFilePath, cases);
 }
 
 // 1. Obtener todos los casos
@@ -114,11 +91,11 @@ export async function getCaseById(idOrCode: string): Promise<CaseRecord | null> 
           files:case_files(*),
           notes:case_notes(*)
         `)
-        .or(`id.eq.${idOrCode},case_code.eq.${idOrCode}`)
-        .single();
+        .eq(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrCode) ? 'id' : 'case_code', idOrCode)
+        .maybeSingle();
 
-      if (!error && data) {
-        return data as CaseRecord;
+      if (!error) {
+        return data as CaseRecord | null;
       }
     } catch (e) {
       // Fallback
@@ -137,10 +114,10 @@ export async function createCaseRecord(
   persistedInSupabase = false
 ): Promise<CaseRecord> {
   const now = new Date().toISOString();
-  const newId = caseData.id || `case-${Date.now()}`;
+  const newId = caseData.id || `case-${randomUUID()}`;
 
-  const files: CaseFileRecord[] = filesMeta.map((f, i) => ({
-    id: `file-${Date.now()}-${i}`,
+  const files: CaseFileRecord[] = filesMeta.map((f) => ({
+    id: `file-${randomUUID()}`,
     case_id: newId,
     file_name: f.name,
     file_path: f.path || `${newId}/${f.name}`,
@@ -151,7 +128,7 @@ export async function createCaseRecord(
 
   const newRecord: CaseRecord = {
     id: newId,
-    case_code: caseData.case_code || `CAS-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+    case_code: caseData.case_code || `CAS-${new Date().getFullYear()}-${randomUUID().replace(/-/g, '').slice(0, 12).toUpperCase()}`,
     created_at: now,
     full_name: caseData.full_name || '',
     phone: caseData.phone || '',
@@ -195,11 +172,14 @@ export async function createCaseRecord(
         .select()
         .single();
 
-      if (!caseError && dbCase) {
+      if (caseError) throw caseError;
+      if (dbCase) {
         newRecord.id = dbCase.id;
+        newRecord.files?.forEach((file) => { file.case_id = dbCase.id; });
       }
     } catch (err) {
       console.error('Error insertando caso en Supabase:', err);
+      throw new Error('No se pudo guardar el caso en la base de datos.');
     }
   }
 
@@ -216,9 +196,12 @@ export async function updateCaseStatus(id: string, status: CaseStatus): Promise<
   const adminSupabase = createAdminClient();
   if (adminSupabase) {
     try {
-      await adminSupabase.from('cases').update({ status }).eq('id', id);
+      const { data, error } = await adminSupabase.from('cases').update({ status }).eq('id', id).select('id').maybeSingle();
+      if (error) throw error;
+      if (!data) return false;
     } catch (e) {
       console.error('Error actualizando estado en Supabase:', e);
+      throw new Error('No se pudo actualizar el estado en la base de datos.');
     }
   }
 
@@ -229,7 +212,7 @@ export async function updateCaseStatus(id: string, status: CaseStatus): Promise<
     saveLocalStore(current);
     return true;
   }
-  return false;
+  return Boolean(adminSupabase);
 }
 
 export async function updateCaseAppointmentStatus(
@@ -253,7 +236,7 @@ export async function updateCaseAppointmentStatus(
   const record = current.find((item) => item.id === id || item.case_code === id);
   if (record) record.appointment_status = status;
   saveLocalStore(current);
-  queueAppointmentNotifications({ ...existing, appointment_status: status }, status);
+  queueAppointmentNotifications({ ...existing, appointment_status: status }, status, randomUUID());
   return true;
 }
 
@@ -284,7 +267,7 @@ export async function updateCaseAppointmentTime(
   const record = current.find((item) => item.id === id || item.case_code === id);
   if (record) record.preferred_time_slot = timeSlot;
   saveLocalStore(current);
-  queueAppointmentNotifications({ ...existing, preferred_time_slot: timeSlot }, 'reprogramada');
+  queueAppointmentNotifications({ ...existing, preferred_time_slot: timeSlot }, 'reprogramada', randomUUID());
   return true;
 }
 
@@ -296,7 +279,7 @@ export async function addCaseNote(
 ): Promise<CaseNoteRecord> {
   const now = new Date().toISOString();
   const newNote: CaseNoteRecord = {
-    id: `note-${Date.now()}`,
+    id: `note-${randomUUID()}`,
     case_id: caseId,
     content: content.trim(),
     author_email: authorEmail,
@@ -316,16 +299,19 @@ export async function addCaseNote(
         .select()
         .single();
 
-      if (!error && data) {
+      if (error) throw error;
+      if (data) {
         newNote.id = data.id;
       }
 
-      await adminSupabase
+      const { error: updateError } = await adminSupabase
         .from('cases')
         .update({ internal_notes: newNote.content })
         .eq('id', caseId);
+      if (updateError) throw updateError;
     } catch (e) {
       console.error('Error insertando nota en Supabase:', e);
+      throw new Error('No se pudo guardar la nota en la base de datos.');
     }
   }
 
@@ -345,11 +331,11 @@ export async function deleteCaseRecord(id: string): Promise<boolean> {
   const adminSupabase = createAdminClient();
   if (adminSupabase) {
     try {
-      await adminSupabase.from('case_notes').delete().eq('case_id', id);
-      await adminSupabase.from('case_files').delete().eq('case_id', id);
-      await adminSupabase.from('cases').delete().eq('id', id);
+      const { error } = await adminSupabase.from('cases').delete().eq('id', id);
+      if (error) throw error;
     } catch (e) {
       console.error('Error eliminando en Supabase:', e);
+      throw new Error('No se pudo eliminar el caso en la base de datos.');
     }
   }
 

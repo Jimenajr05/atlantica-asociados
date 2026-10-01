@@ -11,6 +11,7 @@ export default {
       colors: {
         'azul-rey': {
           DEFAULT: 'var(--color-azul-rey)',
+          dark: 'var(--color-azul-rey-dark)',
           50: '#f0f4f9',
           100: '#e1e9f3',
           200: '#c3d3e7',
@@ -42,6 +43,7 @@ export default {
       },
       fontFamily: {
         sans: ['var(--font-sans)', 'system-ui', '-apple-system', 'sans-serif'],
+        serif: ['var(--font-serif)', 'Georgia', 'serif'],
         heading: ['var(--font-sans)', 'system-ui', 'sans-serif'],
       },
       boxShadow: {

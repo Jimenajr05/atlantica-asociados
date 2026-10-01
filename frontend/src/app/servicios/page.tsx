@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
-import Link from 'next/link';
-import { MessageCircle, FileText, Search, X } from 'lucide-react';
-import { SERVICES } from '@/content/services';
-import { ServiceCard } from '@/components/ServiceCard';
 import { PageHero } from '@/components/PageHero';
+import { ServiceCard } from '@/components/ServiceCard';
 import { COMPANY, WHATSAPP_URL } from '@/content/company';
+import { SERVICES } from '@/content/services';
+import { FileText, MessageCircle, Search, X } from 'lucide-react';
+import Link from 'next/link';
+import { useEffect, useMemo, useState } from 'react';
 
 // All unique badges for filter chips
 const ALL_BADGES = Array.from(new Set(SERVICES.map((s) => s.badge)));

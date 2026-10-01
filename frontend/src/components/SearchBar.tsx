@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import Link from 'next/link';
-import { Search, X, FileText, HelpCircle, Briefcase, ArrowRight } from 'lucide-react';
-import { SERVICES } from '@/content/services';
 import { FAQS } from '@/content/faqs';
+import { SERVICES } from '@/content/services';
+import { ArrowRight, Briefcase, FileText, HelpCircle, Search, X } from 'lucide-react';
+import Link from 'next/link';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 type ResultType = 'service' | 'faq' | 'blog';
 
@@ -65,6 +65,7 @@ interface SearchBarProps {
 
 export function SearchBar({ isOpen, onClose }: SearchBarProps) {
   const [query, setQuery] = useState('');
+  const [index, setIndex] = useState<SearchResult[]>(ALL_RESULTS);
   const [results, setResults] = useState<SearchResult[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -73,11 +74,32 @@ export function SearchBar({ isOpen, onClose }: SearchBarProps) {
     if (!q.trim()) { setResults([]); return; }
     const lower = q.toLowerCase();
     setResults(
-      ALL_RESULTS.filter(
+      index.filter(
         (r) => r.title.toLowerCase().includes(lower) || r.excerpt.toLowerCase().includes(lower)
       ).slice(0, 8)
     );
-  }, []);
+  }, [index]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const controller = new AbortController();
+    fetch('/api/posts', { signal: controller.signal })
+      .then(async (response) => {
+        if (!response.ok) throw new Error('No se pudieron consultar los artículos.');
+        return response.json();
+      })
+      .then((data: { posts?: { id: string; slug: string; title: string; excerpt: string }[] }) => {
+        if (!Array.isArray(data.posts)) return;
+        setIndex([...ALL_RESULTS, ...data.posts.map((post): SearchResult => ({
+          type: 'blog', id: `post-${post.id}`, title: post.title,
+          excerpt: post.excerpt || '', href: `/blog/${encodeURIComponent(post.slug)}`,
+        }))]);
+      })
+      .catch(() => { /* La búsqueda de servicios y preguntas sigue disponible. */ });
+    return () => controller.abort();
+  }, [isOpen]);
+
+  useEffect(() => { search(query); }, [query, search]);
 
   useEffect(() => {
     if (isOpen) {

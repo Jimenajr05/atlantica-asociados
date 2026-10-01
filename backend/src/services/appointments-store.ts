@@ -1,5 +1,5 @@
-import fs from 'fs';
 import path from 'path';
+import { readLocalRecords, writeLocalRecords } from './local-json-store';
 import { createAdminClient } from './supabase-admin';
 import { getAppointmentBookings } from './cases-store';
 import {
@@ -24,19 +24,11 @@ const dataDir = path.resolve(process.cwd(), 'data');
 const availabilityFilePath = path.join(dataDir, 'appointment-availability.json');
 
 function getLocalOverrides(): AvailabilityOverride[] {
-  try {
-    if (!fs.existsSync(availabilityFilePath)) return [];
-    const parsed = JSON.parse(fs.readFileSync(availabilityFilePath, 'utf-8'));
-    return Array.isArray(parsed) ? parsed : [];
-  } catch (error) {
-    console.error('Error leyendo disponibilidad local de citas:', error);
-    return [];
-  }
+  return readLocalRecords<AvailabilityOverride>(availabilityFilePath);
 }
 
 function saveLocalOverrides(overrides: AvailabilityOverride[]) {
-  fs.mkdirSync(dataDir, { recursive: true });
-  fs.writeFileSync(availabilityFilePath, JSON.stringify(overrides, null, 2), 'utf-8');
+  writeLocalRecords(availabilityFilePath, overrides);
 }
 
 export function isValidAppointmentDate(value: string): boolean {
@@ -156,25 +148,14 @@ export async function setAppointmentSlotAvailability(
     throw new Error('Solo se pueden abrir fechas hábiles futuras.');
   }
 
-  if (isAvailable) {
-    const bookings = await getAppointmentBookings();
-    const reserved = bookings.some((booking) =>
-      booking.preferred_date === date &&
-      (booking.preferred_time_slot === timeSlot ||
-        legacyTimeSlots[booking.preferred_time_slot || '']?.includes(timeSlot)) &&
-      booking.appointment_status !== 'cancelada'
-    );
-    if (reserved) throw new Error('Esta franja ya tiene una cita solicitada.');
-  } else {
-    const bookings = await getAppointmentBookings();
-    const reserved = bookings.some((booking) =>
-      booking.preferred_date === date &&
-      (booking.preferred_time_slot === timeSlot ||
-        legacyTimeSlots[booking.preferred_time_slot || '']?.includes(timeSlot)) &&
-      booking.appointment_status !== 'cancelada'
-    );
-    if (reserved) throw new Error('No se puede cerrar una hora que tenga una solicitud activa.');
-  }
+  const bookings = await getAppointmentBookings();
+  const reserved = bookings.some((booking) =>
+    booking.preferred_date === date &&
+    (booking.preferred_time_slot === timeSlot ||
+      legacyTimeSlots[booking.preferred_time_slot || '']?.includes(timeSlot)) &&
+    booking.appointment_status !== 'cancelada'
+  );
+  if (reserved) throw new Error('No se puede cambiar la disponibilidad de una hora con una solicitud activa.');
 
   const adminSupabase = createAdminClient();
   const updatedAt = new Date().toISOString();

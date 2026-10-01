@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { adminFetch } from '@/lib/admin-fetch';
 import {
   APPOINTMENT_TIME_SLOTS,
   AppointmentDayAvailability,
@@ -11,18 +11,16 @@ import {
   LegacyTimeSlot,
   TimeSlot,
 } from '@/types';
-import { adminFetch } from '@/lib/admin-fetch';
 import {
   Ban,
-  CalendarDays,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
-  Clock,
   Loader2,
   MessageCircle,
-  X,
+  X
 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 interface AppointmentAgendaProps {
   cases: CaseRecord[];
@@ -110,7 +108,7 @@ function getBulkAvailabilityAction(day: AppointmentDayAvailability | undefined, 
 
 function getWhatsAppUrl(caseItem: CaseRecord, intent: 'confirm' | 'cancel' = 'confirm') {
   const digits = caseItem.phone.replace(/\D/g, '');
-  const phone = digits.startsWith('506') ? digits : `506${digits}`;
+  const phone = digits.length === 8 ? `506${digits}` : digits;
   const firstName = caseItem.full_name.trim().split(/\s+/)[0];
   const date = formatDate(caseItem.preferred_date || '', {
     weekday: 'long',
@@ -132,7 +130,7 @@ function getWhatsAppUrl(caseItem: CaseRecord, intent: 'confirm' | 'cancel' = 'co
 }
 
 export function AppointmentAgenda({ cases, initialDate = '', onAppointmentStatusChange, onAppointmentTimeChange }: AppointmentAgendaProps) {
-  const [month, setMonth] = useState(() => (initialDate || localDateString(new Date())).slice(0, 7));
+  const [month, setMonth] = useState(() => (initialDate || getCostaRicaDate()).slice(0, 7));
   const [schedule, setSchedule] = useState<AppointmentDayAvailability[]>([]);
   const [selectedDate, setSelectedDate] = useState(initialDate);
   const [requestsPagination, setRequestsPagination] = useState({ date: initialDate, page: 0 });

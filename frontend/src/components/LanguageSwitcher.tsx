@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { Globe, Check } from 'lucide-react';
+import { Check, Globe } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 declare global {
   interface Window {

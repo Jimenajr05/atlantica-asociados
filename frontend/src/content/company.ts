@@ -42,9 +42,9 @@ export const COMPANY: CompanyInfo = {
   phoneDisplay: "6002-4545",
   secondaryPhone: "50684511030",
   secondaryPhoneDisplay: "8451-1030",
-  whatsappNumber: "50660024545",
-  whatsappMessage: "Hola, necesito orientación sobre una situación o trámite institucional.",
-  email: "infoatlantica.asociados@gmail.com",
+  whatsappNumber: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "50660024545",
+  whatsappMessage: process.env.NEXT_PUBLIC_WHATSAPP_DEFAULT_MESSAGE || "Hola, necesito orientación sobre una situación o trámite institucional.",
+  email: process.env.NEXT_PUBLIC_CONTACT_EMAIL || "infoatlantica.asociados@gmail.com",
   schedule: "Lunes a viernes de 7:00 a.m. a 5:00 p.m.",
   scheduleDetails: {
     days: "Lunes a viernes",

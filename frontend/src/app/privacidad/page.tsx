@@ -1,11 +1,11 @@
-import React from 'react';
+import { COMPANY } from '@/content/company';
+import { PRIVACY_CONTENT } from '@/content/privacy';
+import { AlertTriangle, ArrowLeft, ShieldCheck } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ShieldCheck, Lock, AlertTriangle, FileText, ArrowLeft } from 'lucide-react';
-import { PRIVACY_CONTENT } from '@/content/privacy';
-import { COMPANY } from '@/content/company';
 
 export const metadata: Metadata = {
+  alternates: { canonical: '/privacidad' },
   title: 'Aviso de Privacidad y Términos del Servicio',
   description:
     'Política de confidencialidad, tratamiento de datos sensibles de salud y condiciones del servicio en línea de Atlántica & Asociados.',

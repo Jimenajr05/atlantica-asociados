@@ -1,22 +1,23 @@
-import React from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
+import { FaqAccordion } from '@/components/FaqAccordion';
+import { ServiceCard } from '@/components/ServiceCard';
+import { StepCard, WORKFLOW_STEPS } from '@/components/StepCard';
+import { COMPANY, WHATSAPP_URL } from '@/content/company';
+import { SERVICES } from '@/content/services';
+import { getPublicPosts } from '@/lib/posts-store';
 import {
-  MessageCircle,
-  FileCheck2,
   ArrowRight,
   BookOpen,
   Building2,
-  Hospital,
-  Scale,
+  FileCheck2,
   FileText,
+  Hospital,
+  MessageCircle,
+  Scale,
 } from 'lucide-react';
-import { COMPANY, WHATSAPP_URL } from '@/content/company';
-import { SERVICES } from '@/content/services';
-import { WORKFLOW_STEPS, StepCard } from '@/components/StepCard';
-import { ServiceCard } from '@/components/ServiceCard';
-import { FaqAccordion } from '@/components/FaqAccordion';
-import { getPublicPosts } from '@/lib/posts-store';
+import Image from 'next/image';
+import Link from 'next/link';
+
+export const metadata = { alternates: { canonical: '/' } };
 
 export const revalidate = 30;
 
@@ -217,8 +218,8 @@ export default async function HomePage() {
           {/* Imagen de fondo suave */}
           <div className="absolute inset-0 z-0">
             <Image
-              src="/assets/sea_bg.jpg"
-              alt="Muelle al amanecer en un mar tranquilo"
+              src="/assets/hero_bg.jpg"
+              alt="Personas revisando documentos de una consulta"
               fill
               sizes="100vw"
               className="object-cover object-center opacity-30"

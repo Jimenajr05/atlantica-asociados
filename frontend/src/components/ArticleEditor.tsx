@@ -1,18 +1,28 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { EditorContent, useEditor, useEditorState } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import { TextStyle, Color, BackgroundColor } from '@tiptap/extension-text-style';
-import TextAlign from '@tiptap/extension-text-align';
-import { TableKit } from '@tiptap/extension-table';
-import {
-  AlignCenter, AlignJustify, AlignLeft, AlignRight, Bold, Italic, Underline,
-  Strikethrough, List, ListOrdered, IndentIncrease, IndentDecrease, Quote,
-  Undo2, Redo2, RemoveFormatting, Eye, Edit3, type LucideIcon,
-} from 'lucide-react';
 import { ArticleIndent } from '@/lib/article-indent';
 import { parseAndSanitizeMarkdown } from '@/lib/markdown';
+import { TableKit } from '@tiptap/extension-table';
+import TextAlign from '@tiptap/extension-text-align';
+import { BackgroundColor, Color, TextStyle } from '@tiptap/extension-text-style';
+import { EditorContent, useEditor, useEditorState } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import {
+  AlignCenter, AlignJustify, AlignLeft, AlignRight, Bold,
+  Edit3,
+  Eye,
+  IndentDecrease,
+  IndentIncrease,
+  Italic,
+  List, ListOrdered,
+  Quote,
+  Redo2, RemoveFormatting,
+  Strikethrough,
+  Underline,
+  Undo2,
+  type LucideIcon,
+} from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 
 interface ArticleEditorProps {
   value: string;

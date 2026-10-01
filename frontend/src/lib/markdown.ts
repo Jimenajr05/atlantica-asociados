@@ -40,7 +40,7 @@ export async function parseAndSanitizeMarkdown(markdownText: string): Promise<st
       },
     },
     transformTags: {
-      a: (tagName, attribs) => {
+      a: (_tagName, attribs) => {
         // Garantizar que enlaces externos abran con seguridad rel="noopener noreferrer"
         return {
           tagName: 'a',

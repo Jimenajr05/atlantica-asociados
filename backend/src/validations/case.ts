@@ -59,6 +59,11 @@ export const caseSubmissionSchema = z.object({
       });
     } else {
       const dateObj = new Date(data.preferredDate + 'T12:00:00');
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(data.preferredDate) || Number.isNaN(dateObj.getTime()) ||
+          new Date(data.preferredDate + 'T00:00:00Z').toISOString().slice(0, 10) !== data.preferredDate) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['preferredDate'], message: 'Seleccione una fecha válida.' });
+        return;
+      }
       const day = dateObj.getDay();
       if (day === 0 || day === 6) {
         ctx.addIssue({

@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
-import { usePathname } from 'next/navigation';
+import { WHATSAPP_URL } from '@/content/company';
 import { MessageCircle, X } from 'lucide-react';
-import { COMPANY, WHATSAPP_URL } from '@/content/company';
+import { usePathname } from 'next/navigation';
+import { useState } from 'react';
 
 export function WhatsAppFloatingButton() {
   const pathname = usePathname();

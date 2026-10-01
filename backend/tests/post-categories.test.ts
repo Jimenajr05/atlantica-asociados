@@ -9,6 +9,8 @@ import type { AddressInfo } from 'node:net';
 test('publication categories persist, validate and preserve legacy articles', async () => {
   const originalDirectory = process.cwd();
   const originalKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const originalNodeEnv = process.env.NODE_ENV;
+  process.env.NODE_ENV = 'test';
   const temporaryDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'atlantica-post-categories-'));
   process.env.SUPABASE_SERVICE_ROLE_KEY = 'placeholder';
   process.chdir(temporaryDirectory);
@@ -54,7 +56,9 @@ test('publication categories persist, validate and preserve legacy articles', as
     process.chdir(originalDirectory);
     if (originalKey === undefined) delete process.env.SUPABASE_SERVICE_ROLE_KEY;
     else process.env.SUPABASE_SERVICE_ROLE_KEY = originalKey;
+    if (originalNodeEnv === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = originalNodeEnv;
     assert.equal(path.dirname(temporaryDirectory), path.resolve(os.tmpdir()));
-    fs.rmSync(temporaryDirectory, { recursive: true, force: true });
+    fs.rmSync(temporaryDirectory, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   }
 });

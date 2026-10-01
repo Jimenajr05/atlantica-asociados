@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { requireAdmin } from '../middleware/require-admin';
+import { serializeAppointments } from '../middleware/serialize-appointments';
 import {
   getAppointmentAvailability,
   isValidAppointmentDate,
@@ -27,7 +28,7 @@ router.get('/availability', async (req: Request, res: Response): Promise<void> =
   }
 });
 
-router.put('/availability', requireAdmin, async (req: Request, res: Response): Promise<void> => {
+router.put('/availability', requireAdmin, serializeAppointments(async (req: Request, res: Response): Promise<void> => {
   try {
     const { date, timeSlot, available } = req.body || {};
     if (
@@ -45,6 +46,6 @@ router.put('/availability', requireAdmin, async (req: Request, res: Response): P
   } catch (error: any) {
     res.status(409).json({ error: error.message || 'No se pudo actualizar la disponibilidad.' });
   }
-});
+}));
 
 export default router;

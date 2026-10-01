@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { ArticleEditor } from '@/components/ArticleEditor';
+import { adminFetch } from '@/lib/admin-fetch';
+import { PostCategory } from '@/types';
+import { AlertCircle, ArrowLeft, Loader2, Save } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Save, Loader2, AlertCircle } from 'lucide-react';
-import { PostCategory } from '@/types';
-import { ArticleEditor } from '@/components/ArticleEditor';
+import React, { useEffect, useState } from 'react';
 
 export default function NewBlogPostPage() {
   const router = useRouter();
@@ -41,7 +42,7 @@ export default function NewBlogPostPage() {
 
     setSaving(true);
     try {
-      const res = await fetch('/api/admin/posts', {
+      const res = await adminFetch('/api/admin/posts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

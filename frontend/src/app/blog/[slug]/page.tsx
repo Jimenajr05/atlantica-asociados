@@ -1,12 +1,10 @@
-import React from 'react';
+import { COMPANY, getWhatsAppCustomUrl } from '@/content/company';
+import { parseAndSanitizeMarkdown } from '@/lib/markdown';
+import { getPostBySlug, getPublicPosts } from '@/lib/posts-store';
+import { ArrowLeft, Calendar, Clock, MessageCircle } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Calendar, Clock, ArrowLeft, MessageCircle } from 'lucide-react';
-import { getPostBySlug, getPublicPosts } from '@/lib/posts-store';
-import { parseAndSanitizeMarkdown } from '@/lib/markdown';
-import { BlogPost } from '@/types';
-import { COMPANY, getWhatsAppCustomUrl } from '@/content/company';
 
 interface BlogPostPageProps {
   params: Promise<{ slug: string }>;
@@ -84,7 +82,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
       name: 'ATLÁNTICA & ASOCIADOS',
       logo: {
         '@type': 'ImageObject',
-        url: `${siteUrl}/assets/logo.jpg`,
+        url: `${siteUrl}/assets/logo-transparent.png`,
       },
     },
     mainEntityOfPage: {
@@ -101,7 +99,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema).replace(/</g, '\\u003c') }}
       />
 
       <article className="py-12 sm:py-16 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 bg-[#fafafc]">

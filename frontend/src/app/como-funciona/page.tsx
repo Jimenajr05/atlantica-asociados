@@ -1,21 +1,18 @@
-import React from 'react';
-import type { Metadata } from 'next';
-import Link from 'next/link';
+import { PageHero } from '@/components/PageHero';
+import { COMPANY, WHATSAPP_URL } from '@/content/company';
 import {
+  CheckCircle,
+  FileSignature,
+  MessageCircle,
   MessageSquareText,
   SearchCheck,
-  FileSignature,
-  CheckCircle,
-  MessageCircle,
-  Clock,
-  ShieldCheck,
-  Send,
-  HelpCircle,
+  Send
 } from 'lucide-react';
-import { COMPANY, WHATSAPP_URL } from '@/content/company';
-import { PageHero } from '@/components/PageHero';
+import type { Metadata } from 'next';
+import Link from 'next/link';
 
 export const metadata: Metadata = {
+  alternates: { canonical: '/como-funciona' },
   title: 'Cómo Funciona Nuestro Servicio de Gestión y Redacción',
   description:
     'Conozca paso a paso cómo trabajamos su caso: desde el primer mensaje por WhatsApp o formulario, el análisis técnico, la preparación del documento hasta el seguimiento.',

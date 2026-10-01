@@ -2,6 +2,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
+import multer from 'multer';
 
 // Cargar variables de entorno (soporta .env y .env.local)
 dotenv.config();
@@ -15,6 +16,8 @@ import appointmentsRouter from './routes/appointments';
 import { startNotificationWorker } from './services/appointment-notifications';
 
 const app = express();
+// Configurar solo los proxies conocidos; no confiar directamente en cabeceras del cliente.
+if (process.env.TRUST_PROXY) app.set('trust proxy', process.env.TRUST_PROXY.split(',').map((value) => value.trim()));
 const PORT = process.env.PORT || 5000;
 
 // Configuración de CORS
@@ -32,7 +35,7 @@ app.use(
       if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
         callback(null, true);
       } else {
-        callback(null, true); // Permisivo en desarrollo / APIs
+        callback(null, false);
       }
     },
     credentials: true,
@@ -68,8 +71,9 @@ app.use((_req: Request, res: Response) => {
 // Manejador global de errores
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   console.error('[Error de Servidor]:', err);
-  res.status(err.status || 500).json({
-    error: err.message || 'Error interno del servidor.',
+  const status = err instanceof multer.MulterError ? 400 : err.status || 500;
+  res.status(status).json({
+    error: status >= 500 ? 'Error interno del servidor.' : err.message || 'Solicitud inválida.',
   });
 });
 

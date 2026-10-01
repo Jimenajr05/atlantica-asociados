@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
-import { ChevronDown, HelpCircle } from 'lucide-react';
 import { FAQS, FaqItem } from '@/content/faqs';
+import { ChevronDown, HelpCircle } from 'lucide-react';
+import { useState } from 'react';
 
 interface FaqAccordionProps {
   items?: FaqItem[];
@@ -45,7 +45,8 @@ export function FaqAccordion({ items = FAQS, limit }: FaqAccordionProps) {
           return (
             <div
               key={faq.id}
-              className={`rounded-xl border transition-all duration-200 overflow-hidden bg-white ${
+              id={faq.id}
+              className={`scroll-mt-32 rounded-xl border transition-all duration-200 overflow-hidden bg-white ${
                 isOpen
                   ? 'border-azul-rey/40 shadow-md ring-1 ring-azul-rey/20'
                   : 'border-slate-200 hover:border-slate-300 shadow-sm'

@@ -1,5 +1,5 @@
-import { MetadataRoute } from 'next';
 import { getPublicPosts } from '@/lib/posts-store';
+import { MetadataRoute } from 'next';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://atlanticayasociados.com';

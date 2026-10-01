@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { useRouter, useParams } from 'next/navigation';
-import { ArrowLeft, Save, Loader2, AlertCircle } from 'lucide-react';
-import { PostCategory } from '@/types';
 import { ArticleEditor } from '@/components/ArticleEditor';
+import { adminFetch } from '@/lib/admin-fetch';
+import { PostCategory } from '@/types';
+import { AlertCircle, ArrowLeft, Loader2, Save } from 'lucide-react';
+import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
+import React, { useEffect, useState } from 'react';
 
 export default function EditBlogPostPage() {
   const router = useRouter();
@@ -25,8 +26,9 @@ export default function EditBlogPostPage() {
   useEffect(() => {
     async function fetchPost() {
       try {
-        const res = await fetch(`/api/admin/posts/${postId}`);
+        const res = await adminFetch(`/api/admin/posts/${encodeURIComponent(postId)}`);
         const data = await res.json();
+        if (!res.ok || !data.post) throw new Error('No se pudo cargar el artículo.');
         if (data.post) {
           setTitle(data.post.title || '');
           setSlug(data.post.slug || '');
@@ -57,7 +59,7 @@ export default function EditBlogPostPage() {
 
     setSaving(true);
     try {
-      const res = await fetch(`/api/admin/posts/${postId}`, {
+      const res = await adminFetch(`/api/admin/posts/${encodeURIComponent(postId)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

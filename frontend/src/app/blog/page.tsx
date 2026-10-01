@@ -1,13 +1,13 @@
-import React from 'react';
-import type { Metadata } from 'next';
-import Link from 'next/link';
-import { BookOpen, Calendar, Clock, ArrowRight, MessageCircle } from 'lucide-react';
+import { PageHero } from '@/components/PageHero';
+import { COMPANY, WHATSAPP_URL } from '@/content/company';
 import { getPublicPosts } from '@/lib/posts-store';
 import { BlogPost } from '@/types';
-import { COMPANY, WHATSAPP_URL } from '@/content/company';
-import { PageHero } from '@/components/PageHero';
+import { ArrowRight, BookOpen, Calendar, Clock, MessageCircle } from 'lucide-react';
+import type { Metadata } from 'next';
+import Link from 'next/link';
 
 export const metadata: Metadata = {
+  alternates: { canonical: '/blog' },
   title: 'Blog & noticias | ATLÁNTICA & ASOCIADOS',
   description:
     'Guías ciudadanas, artículos de orientación y noticias de Costa Rica en un solo lugar.',

@@ -1,35 +1,29 @@
 'use client';
 
-import React, { useEffect, useState, useId } from 'react';
-import Link from 'next/link';
+import { getWhatsAppCustomUrl } from '@/content/company';
+import { SERVICES } from '@/content/services';
 import {
-  Send,
-  UploadCloud,
-  FileText,
-  X,
-  AlertCircle,
-  CheckCircle,
-  Calendar,
-  Clock,
-  CalendarDays,
-  ChevronLeft,
-  ChevronRight,
-  MessageCircle,
-  ShieldCheck,
-  Loader2
-} from 'lucide-react';
-import { COMPANY, getWhatsAppCustomUrl } from '@/content/company';
-import {
-  ALLOWED_EXTENSIONS,
-  MAX_FILE_SIZE,
   MAX_FILES_COUNT,
-  validateClientFile,
+  validateClientFile
 } from '@/lib/validations/case';
 import { AppointmentDayAvailability, TimeSlot } from '@/types';
-
-interface CaseFormProps {
-  preselectedServiceId?: string;
-}
+import {
+  AlertCircle,
+  Calendar,
+  CheckCircle,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  FileText,
+  Loader2,
+  MessageCircle,
+  Send,
+  ShieldCheck,
+  UploadCloud,
+  X
+} from 'lucide-react';
+import Link from 'next/link';
+import React, { useEffect, useId, useState } from 'react';
 
 function getMinDateString() {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -82,7 +76,7 @@ async function fetchAppointmentAvailability(from: string, signal?: AbortSignal) 
   return result.dates as AppointmentDayAvailability[];
 }
 
-export function CaseForm({ preselectedServiceId }: CaseFormProps) {
+export function CaseForm() {
   const formId = useId();
 
   // Campos principales
@@ -91,6 +85,11 @@ export function CaseForm({ preselectedServiceId }: CaseFormProps) {
   const [email, setEmail] = useState('');
   const [institution, setInstitution] = useState('');
   const [description, setDescription] = useState('');
+  useEffect(() => {
+    const serviceId = new URLSearchParams(window.location.search).get('servicio');
+    const service = SERVICES.find((item) => item.id === serviceId);
+    if (service) setDescription(`Consulta sobre ${service.title}: `);
+  }, []);
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
 
   // Solicitud condicional de cita

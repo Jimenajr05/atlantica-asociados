@@ -1,12 +1,11 @@
-import React from 'react';
-import type { Metadata } from 'next';
-import Link from 'next/link';
-import { MessageCircle, HelpCircle, ArrowRight } from 'lucide-react';
 import { FaqAccordion } from '@/components/FaqAccordion';
-import { FAQS } from '@/content/faqs';
 import { COMPANY, WHATSAPP_URL } from '@/content/company';
+import { FAQS } from '@/content/faqs';
+import { HelpCircle, MessageCircle } from 'lucide-react';
+import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
+  alternates: { canonical: '/preguntas-frecuentes' },
   title: 'Preguntas Frecuentes sobre Trámites y Asesoría Ciudadana',
   description:
     'Respuestas sencillas sobre cómo empezar, cuánto tarda un documento, qué papeles adjuntar, confidencialidad de datos y citas.',

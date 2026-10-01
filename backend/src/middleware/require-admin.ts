@@ -4,7 +4,7 @@ import { createAdminClient } from '../services/supabase-admin';
 export async function requireAdmin(req: Request, res: Response, next: NextFunction): Promise<void> {
   const adminClient = createAdminClient();
   if (!adminClient) {
-    if (process.env.NODE_ENV !== 'production') {
+    if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
       next();
       return;
     }
@@ -32,10 +32,11 @@ export async function requireAdmin(req: Request, res: Response, next: NextFuncti
       .maybeSingle();
 
     if (profileError || profile?.role !== 'admin') {
-      res.status(403).json({ error: 'No tiene permisos para administrar citas.' });
+      res.status(403).json({ error: 'No tiene permisos de administrador.' });
       return;
     }
 
+    res.locals.adminUser = user;
     next();
   } catch {
     res.status(401).json({ error: 'No se pudo validar la sesión de administrador.' });

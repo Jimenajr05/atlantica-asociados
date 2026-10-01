@@ -1,44 +1,43 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import { AppointmentAgenda } from '@/components/AppointmentAgenda';
+import { PageHero } from '@/components/PageHero';
+import { adminFetch } from '@/lib/admin-fetch';
+import { createClient } from '@/lib/supabase/client';
+import { AppointmentStatus, AppointmentTimePreference, BlogPost, CaseRecord, CaseStatus, TimeSlot } from '@/types';
+import {
+  AlertCircle,
+  AlertTriangle,
+  BookOpen,
+  Building,
+  Calendar,
+  CalendarDays,
+  CheckCircle2,
+  Clock,
+  Download,
+  Edit,
+  ExternalLink,
+  Eye,
+  FileCheck,
+  FileText,
+  Filter,
+  Info,
+  Loader2,
+  LogOut,
+  Mail,
+  Phone,
+  Plus,
+  RefreshCw,
+  Search,
+  ShieldCheck,
+  Trash2,
+  User,
+  X
+} from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import {
-  FileText,
-  BookOpen,
-  Calendar,
-  Clock,
-  Search,
-  Filter,
-  Download,
-  Trash2,
-  Edit,
-  Eye,
-  Plus,
-  CheckCircle2,
-  AlertCircle,
-  AlertTriangle,
-  LogOut,
-  RefreshCw,
-  ExternalLink,
-  MessageCircle,
-  FileCheck,
-  User,
-  X,
-  Phone,
-  Mail,
-  Building,
-  Loader2,
-  Info,
-  ShieldCheck,
-  CalendarDays,
-} from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
-import { adminFetch } from '@/lib/admin-fetch';
-import { AppointmentAgenda } from '@/components/AppointmentAgenda';
-import { PageHero } from '@/components/PageHero';
-import { AppointmentStatus, AppointmentTimePreference, CaseRecord, CaseStatus, BlogPost, TimeSlot } from '@/types';
+import React, { Suspense, useEffect, useState } from 'react';
 
 interface ConfirmModalState {
   isOpen: boolean;
@@ -154,7 +153,9 @@ function AdminDashboardContent() {
     setLoading(true);
     try {
       // 1. Obtener artículos del blog desde la API unificada
-      const postsRes = await fetch('/api/admin/posts');
+      const postsRes = await adminFetch('/api/admin/posts');
+      if (postsRes.status === 401) { router.replace('/admin/login'); return; }
+      if (!postsRes.ok) throw new Error('No se pudieron cargar las publicaciones.');
       if (postsRes.ok) {
         const postsData = await postsRes.json();
         if (postsData.posts) {
@@ -163,7 +164,8 @@ function AdminDashboardContent() {
       }
 
       // 2. Obtener casos desde la API unificada (soporta local y Supabase)
-      const casesRes = await fetch('/api/admin/cases');
+      const casesRes = await adminFetch('/api/admin/cases');
+      if (!casesRes.ok) throw new Error('No se pudieron cargar los casos.');
       if (casesRes.ok) {
         const casesData = await casesRes.json();
         if (Array.isArray(casesData.cases)) {
@@ -178,7 +180,7 @@ function AdminDashboardContent() {
         setUserEmail(session.user.email || '');
       }
     } catch {
-      // Fallback amigable
+      showToast('No se pudieron cargar los datos. Revise su sesión y conexión.', 'error');
     } finally {
       setLoading(false);
     }
@@ -232,11 +234,12 @@ function AdminDashboardContent() {
   // Cambiar estado de caso
   const handleStatusChange = async (caseId: string, newStatus: CaseStatus) => {
     try {
-      await fetch(`/api/admin/cases/${caseId}/status`, {
+      const response = await adminFetch(`/api/admin/cases/${caseId}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus }),
       });
+      if (!response.ok) throw new Error('No se pudo actualizar el estado.');
 
       setCases((prev) =>
         prev.map((c) => (c.id === caseId ? { ...c, status: newStatus } : c))
@@ -267,7 +270,7 @@ function AdminDashboardContent() {
     setSelectedCase((prev) => prev?.id === caseId ? { ...prev, appointment_status: status } : prev);
     showToast(
       status === 'confirmada'
-        ? 'Cita marcada como confirmada. Envíe el mensaje preparado en WhatsApp.'
+        ? 'Cita confirmada. Las notificaciones se procesarán automáticamente.'
         : status === 'cancelada'
           ? 'Solicitud cancelada y franja liberada.'
           : 'Estado de la cita actualizado.',
@@ -303,9 +306,10 @@ function AdminDashboardContent() {
       isDestructive: true,
       onConfirm: async () => {
         try {
-          await fetch(`/api/admin/cases/${caseItem.id}/delete`, {
+          const response = await adminFetch(`/api/admin/cases/${caseItem.id}/delete`, {
             method: 'DELETE',
           });
+          if (!response.ok) throw new Error('No se pudo eliminar el caso.');
 
           setCases((prev) => prev.filter((c) => c.id !== caseItem.id));
           if (selectedCase?.id === caseItem.id) {
@@ -327,7 +331,7 @@ function AdminDashboardContent() {
 
     setAddingNote(true);
     try {
-      const res = await fetch(`/api/admin/cases/${selectedCase.id}/notes`, {
+      const res = await adminFetch(`/api/admin/cases/${selectedCase.id}/notes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -337,6 +341,7 @@ function AdminDashboardContent() {
       });
 
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'No se pudo guardar la nota.');
       if (data.note) {
         const updatedNotes = [...(selectedCase.notes || []), data.note];
         setSelectedCase({ ...selectedCase, notes: updatedNotes, internal_notes: newNoteContent });
@@ -360,14 +365,25 @@ function AdminDashboardContent() {
   // Descargar archivo mediante enlace firmado
   const handleDownloadSignedUrl = async (caseId: string, filePath: string) => {
     try {
-      const res = await fetch(`/api/admin/cases/${caseId}/signed-url`, {
+      const res = await adminFetch(`/api/admin/cases/${caseId}/signed-url`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ filePath }),
       });
       const data = await res.json();
       if (data.signedUrl && data.signedUrl !== '#') {
-        window.open(data.signedUrl, '_blank');
+        if (data.signedUrl.startsWith('/api/')) {
+          const download = await adminFetch(data.signedUrl);
+          if (!download.ok) throw new Error('No se pudo descargar el documento.');
+          const url = URL.createObjectURL(await download.blob());
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = decodeURIComponent(download.headers.get('X-File-Name') || 'documento');
+          link.click();
+          setTimeout(() => URL.revokeObjectURL(url), 1000);
+        } else {
+          window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
+        }
       } else {
         showToast(data.note || 'No fue posible generar el enlace de descarga.', 'info');
       }
@@ -380,7 +396,7 @@ function AdminDashboardContent() {
   const handleTogglePublish = async (post: BlogPost) => {
     const newPublished = !post.published;
     try {
-      const response = await fetch(`/api/admin/posts/${post.id}`, {
+      const response = await adminFetch(`/api/admin/posts/${post.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...post, published: newPublished }),
@@ -411,7 +427,8 @@ function AdminDashboardContent() {
       isDestructive: true,
       onConfirm: async () => {
         try {
-          await fetch(`/api/admin/posts/${post.id}`, { method: 'DELETE' });
+          const response = await adminFetch(`/api/admin/posts/${post.id}`, { method: 'DELETE' });
+          if (!response.ok) throw new Error('No se pudo eliminar la publicación.');
           setPosts((prev) => prev.filter((p) => p.id !== post.id));
           setConfirmModal((prev) => ({ ...prev, isOpen: false }));
           showToast('Publicación eliminada.', 'success');
@@ -421,6 +438,10 @@ function AdminDashboardContent() {
       },
     });
   };
+
+  if (loading) {
+    return <div className="flex min-h-[60vh] items-center justify-center" role="status"><Loader2 className="h-8 w-8 animate-spin" /><span className="sr-only">Cargando administración</span></div>;
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 pb-16">

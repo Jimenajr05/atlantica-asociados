@@ -1,4 +1,6 @@
 import { Router, Request, Response } from 'express';
+import { requireAdmin } from '../middleware/require-admin';
+import { postSchema, postUpdateSchema } from '../validations/post';
 import {
   getAllPosts,
   getPostById,
@@ -8,6 +10,7 @@ import {
 } from '../services/posts-store';
 
 const router = Router();
+router.use(requireAdmin);
 
 // GET /api/admin/posts
 router.get('/', async (_req: Request, res: Response): Promise<void> => {
@@ -22,18 +25,13 @@ router.get('/', async (_req: Request, res: Response): Promise<void> => {
 // POST /api/admin/posts
 router.post('/', async (req: Request, res: Response): Promise<void> => {
   try {
-    const body = req.body || {};
+    const result = postSchema.safeParse(req.body);
+    if (!result.success) {
+      res.status(400).json({ error: result.error.issues[0].message });
+      return;
+    }
+    const body = result.data;
     const { title, slug, excerpt, content, published, category } = body;
-    if (category !== undefined && category !== 'blog' && category !== 'noticias') {
-      res.status(400).json({ error: 'Seleccione Blog o Noticias como tipo de publicación.' });
-      return;
-    }
-
-    if (!title || !slug || !content) {
-      res.status(400).json({ error: 'Título, slug y contenido son obligatorios.' });
-      return;
-    }
-
     const post = await createPost({
       category: category || 'blog',
       title: title.trim(),
@@ -71,21 +69,17 @@ router.get('/:id', async (req: Request, res: Response): Promise<void> => {
 router.put('/:id', async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const body = req.body || {};
-    const { title, slug, excerpt, content, published, category } = body;
-    if (category !== undefined && category !== 'blog' && category !== 'noticias') {
-      res.status(400).json({ error: 'Seleccione Blog o Noticias como tipo de publicación.' });
+    const result = postUpdateSchema.safeParse(req.body);
+    if (!result.success) {
+      res.status(400).json({ error: result.error.issues[0].message });
       return;
     }
+    const body = result.data;
+    const { excerpt } = body;
 
     const updated = await updatePost(id, {
-      ...(category !== undefined ? { category } : {}),
-      title,
-      slug,
-      excerpt,
-      content,
-      meta_description: excerpt?.trim() || '',
-      published: Boolean(published),
+      ...body,
+      ...(excerpt !== undefined ? { meta_description: excerpt } : {}),
     });
 
     if (updated) {
@@ -93,7 +87,7 @@ router.put('/:id', async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    res.status(400).json({ error: 'No se pudo actualizar el artículo.' });
+    res.status(404).json({ error: 'Artículo no encontrado.' });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -103,7 +97,11 @@ router.put('/:id', async (req: Request, res: Response): Promise<void> => {
 router.delete('/:id', async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    await deletePost(id);
+    const deleted = await deletePost(id);
+    if (!deleted) {
+      res.status(404).json({ error: 'Artículo no encontrado.' });
+      return;
+    }
     res.json({ success: true, message: 'Artículo eliminado.' });
   } catch (error: any) {
     res.status(500).json({ error: error.message });

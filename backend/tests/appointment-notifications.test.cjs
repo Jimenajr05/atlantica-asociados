@@ -78,9 +78,21 @@ test('citas: persistencia, eventos, duplicados, validación y fallos independien
       assert.equal((await patch()).status, 200); await settle();
       assert.equal(read().length, count);
       assert.equal(read().filter(job=>job.key.startsWith(persisted.id + ':')).length, 5);
+      const submit = () => {
+        const concurrent = new FormData();
+        Object.entries({ fullName: 'Solicitud simultánea', phone: '88888888', description: 'Consulta simultánea para verificar reservas.', privacyAccepted: 'true', appointmentRequested: 'true', preferredDate: date, preferredTimeSlot: '12:00' }).forEach(([key, value]) => concurrent.append(key, value));
+        return originalFetch(base + '/api/cases', { method: 'POST', body: concurrent });
+      };
+      const concurrentResponses = await Promise.all([submit(), submit()]);
+      assert.deepEqual(concurrentResponses.map(result => result.status).sort(), [200, 409]);
+      await settle();
+      const currentCount = read().length;
+      await store.updateCaseAppointmentStatus(persisted.id, 'cancelada'); await settle();
+      await store.updateCaseAppointmentStatus(persisted.id, 'confirmada'); await settle();
+      assert.equal(read().length, currentCount + 4);
     } finally { await new Promise(resolve=>server.close(resolve)); }
   } finally {
     nodemailer.createTransport = originalTransport; global.fetch = originalFetch; process.chdir(cwd);
-    fs.rmSync(dir, { recursive: true, force: true });
+    fs.rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   }
 });

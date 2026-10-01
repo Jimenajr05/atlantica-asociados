@@ -1,8 +1,7 @@
-import React from 'react';
-import Link from 'next/link';
-import { Hospital, Building2, Landmark, Scale, Users, ShieldAlert, CheckCircle2, MessageCircle, ArrowRight } from 'lucide-react';
-import { ServiceItem } from '@/content/services';
 import { getWhatsAppCustomUrl } from '@/content/company';
+import { ServiceItem } from '@/content/services';
+import { ArrowRight, Building2, CheckCircle2, Hospital, Landmark, MessageCircle, Scale, ShieldAlert, Users } from 'lucide-react';
+import Link from 'next/link';
 
 interface ServiceCardProps {
   service: ServiceItem;
@@ -34,7 +33,7 @@ export function ServiceCard({ service, compact = false }: ServiceCardProps) {
   );
 
   return (
-    <article className={`${compact ? 'min-w-0' : 'min-h-[390px]'} bg-white rounded-xl border border-slate-200 border-t-2 border-t-dorado shadow-sm hover:shadow-md hover:border-slate-300 transition-all duration-200 flex flex-col overflow-hidden group`}>
+    <article id={service.id} className={`${compact ? 'min-w-0' : 'min-h-[390px]'} scroll-mt-32 bg-white rounded-xl border border-slate-200 border-t-2 border-t-dorado shadow-sm hover:shadow-md hover:border-slate-300 transition-all duration-200 flex flex-col overflow-hidden group`}>
       <div className={`${compact ? 'p-5' : 'p-6 sm:p-7'} flex-1`}>
         <div className="flex items-center justify-between gap-4 mb-5">
           <span className="text-[10px] font-bold tracking-wider uppercase px-2.5 py-1.5 rounded-md bg-slate-100 text-slate-700">
