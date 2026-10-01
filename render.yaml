@@ -1,0 +1,50 @@
+# Backend de producción. El servicio y el disco tienen costo.
+# Revisar el importe en Render antes de aplicar el Blueprint.
+services:
+  - type: web
+    name: atlantica-backend
+    runtime: node
+    plan: 0.5c-512mb
+    rootDir: backend
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    disk:
+      name: atlantica-data
+      mountPath: /opt/render/project/src/backend/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_VERSION
+        value: 22.18.0
+      - key: NODE_ENV
+        value: production
+      - key: FRONTEND_URL
+        value: https://infoatlanticaasociados.com
+      - key: NEXT_PUBLIC_SITE_URL
+        value: https://infoatlanticaasociados.com
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_STORAGE_BUCKET
+        value: case-documents
+      - key: NOTIFICATIONS_TEST_MODE
+        value: "false"
+      - key: NOTIFICATION_STORE_PATH
+        value: data/appointment-notifications.json
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_SECURE
+        value: "false"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SMTP_FROM
+        value: "Atlántica & Asociados <infoatlantica.asociados@gmail.com>"
+      - key: NOTIFICATION_EMAIL_TO
+        value: infoatlantica.asociados@gmail.com
+      - key: RATE_LIMIT_MAX_PER_HOUR
+        value: "5"

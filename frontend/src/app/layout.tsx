@@ -18,7 +18,7 @@ const cinzel = Cinzel({
   display: 'swap',
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://atlanticayasociados.com';
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://infoatlanticaasociados.com';
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
     };
   }
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://atlanticayasociados.com';
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://infoatlanticaasociados.com';
   const postUrl = `${siteUrl}/blog/${post.slug}`;
 
   return {
@@ -63,7 +63,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   }
 
   const cleanHtmlContent = await parseAndSanitizeMarkdown(post.content);
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://atlanticayasociados.com';
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://infoatlanticaasociados.com';
 
   const articleSchema = {
     '@context': 'https://schema.org',
