@@ -5,7 +5,7 @@ import { AlertCircle, ArrowLeft, Loader2, Lock, Mail, ShieldCheck } from 'lucide
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -13,6 +13,15 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    const error = new URLSearchParams(window.location.search).get('error');
+    if (error === 'access_denied') {
+      setErrorMsg('Acceso reservado a infoatlantica.asociados@gmail.com con permisos de administrador.');
+    } else if (error === 'auth_failed') {
+      setErrorMsg('No se pudo completar el inicio de sesión. Inténtelo de nuevo.');
+    }
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,6 +40,10 @@ export default function AdminLoginPage() {
       }
 
       if (data.user) {
+        if (data.user.email?.toLowerCase() !== 'infoatlantica.asociados@gmail.com') {
+          await supabase.auth.signOut();
+          throw new Error('Acceso reservado a infoatlantica.asociados@gmail.com.');
+        }
         // Verificar rol en la tabla `profiles`
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
@@ -44,7 +57,7 @@ export default function AdminLoginPage() {
           throw new Error('Acceso denegado: Esta cuenta no posee permisos de administrador.');
         }
 
-        router.push('/admin');
+        router.replace('/admin');
       }
     } catch (err: any) {
       setErrorMsg(err.message || 'Error al iniciar sesión.');
@@ -72,7 +85,7 @@ export default function AdminLoginPage() {
             Panel de Administración
           </h1>
           <p className="text-xs text-slate-500">
-            Acceso exclusivo para el equipo autorizado de Atlántica &amp; Asociados
+            Acceso exclusivo para infoatlantica.asociados@gmail.com
           </p>
         </div>
 

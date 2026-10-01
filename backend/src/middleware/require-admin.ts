@@ -4,7 +4,7 @@ import { createAdminClient } from '../services/supabase-admin';
 export async function requireAdmin(req: Request, res: Response, next: NextFunction): Promise<void> {
   const adminClient = createAdminClient();
   if (!adminClient) {
-    if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
+    if (process.env.NODE_ENV === 'test') {
       next();
       return;
     }
@@ -22,6 +22,11 @@ export async function requireAdmin(req: Request, res: Response, next: NextFuncti
     const { data: { user }, error: authError } = await adminClient.auth.getUser(token);
     if (authError || !user) {
       res.status(401).json({ error: 'La sesión de administrador no es válida.' });
+      return;
+    }
+
+    if (user.email?.toLowerCase() !== 'infoatlantica.asociados@gmail.com') {
+      res.status(403).json({ error: 'Esta cuenta no está autorizada para administrar el sitio.' });
       return;
     }
 

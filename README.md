@@ -44,6 +44,12 @@ atlantica-asociados/
 
 ## 🚀 Comandos Rápidos de Ejecución
 
+### Acceso de administración
+
+Todas las rutas `/admin`, excepto `/admin/login`, requieren una sesión válida de Supabase de `infoatlantica.asociados@gmail.com` y un registro en `profiles` con `role = 'admin'`. La API aplica las mismas restricciones, incluso en desarrollo; sin configuración de autenticación rechaza las peticiones de administración. Las pruebas automatizadas con `NODE_ENV=test` mantienen su modo aislado sin Supabase. Sin sesión se redirige al login antes de renderizar el panel. Una sesión vigente permite volver al panel sin introducir las credenciales otra vez.
+
+El inicio de sesión utiliza correo y contraseña. Configure `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY` en el frontend, cree la cuenta `infoatlantica.asociados@gmail.com` en Supabase Authentication y asigne el rol `admin` a su registro en `profiles`.
+
 Desde la raíz del repositorio:
 
 Utilice Node.js 22.18 o posterior. Ejecute `npm run typecheck` y `npm test` para comprobar tipos y pruebas en ambas aplicaciones.

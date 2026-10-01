@@ -67,6 +67,11 @@ function AdminDashboardContent() {
   const [activeTab, setActiveTab] = useState<'cases' | 'blog' | 'agenda'>('cases');
   const [loading, setLoading] = useState(true);
   const [userEmail, setUserEmail] = useState<string>('');
+  const [signingOut, setSigningOut] = useState(false);
+
+  useEffect(() => {
+    router.prefetch('/admin/login');
+  }, [router]);
 
   // Estados de Casos
   const [cases, setCases] = useState<CaseRecord[]>([]);
@@ -187,13 +192,17 @@ function AdminDashboardContent() {
   };
 
   const handleSignOut = async () => {
+    if (signingOut) return;
+    setSigningOut(true);
     try {
       const supabase = createClient();
-      await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      router.replace('/admin/login');
     } catch {
-      // Ignore
+      setSigningOut(false);
+      showToast('No se pudo cerrar la sesión. Inténtelo de nuevo.', 'error');
     }
-    router.push('/admin/login');
   };
 
   // Filtrado reactivo de casos
@@ -523,12 +532,15 @@ function AdminDashboardContent() {
               </span>
             </div>
             <button
+              type="button"
               onClick={handleSignOut}
-              className="inline-flex shrink-0 items-center gap-2 rounded-md border border-white/15 px-3 py-2 text-xs font-semibold text-slate-200 transition-colors hover:border-red-300/40 hover:bg-red-400/10 hover:text-red-200"
+              disabled={signingOut}
+              aria-busy={signingOut}
+              className="inline-flex shrink-0 items-center gap-2 rounded-md border border-white/15 px-3 py-2 text-xs font-semibold text-slate-200 transition-colors hover:border-red-300/40 hover:bg-red-400/10 hover:text-red-200 disabled:cursor-wait disabled:opacity-60"
               title="Cerrar sesión"
             >
-              <LogOut className="h-4 w-4" />
-              <span>Cerrar sesión</span>
+              {signingOut ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogOut className="h-4 w-4" />}
+              <span aria-live="polite">{signingOut ? 'Cerrando sesión…' : 'Cerrar sesión'}</span>
             </button>
           </div>
         </div>
