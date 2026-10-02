@@ -8,7 +8,7 @@ Sitio web oficial, plataforma de recepción de casos y sistema de gestión de co
 
 Para publicar con **Vercel + Supabase**, el dominio existente y sin Render,
 seguir [DEPLOYMENT.md](DEPLOYMENT.md). La página y la API Express se alojan
-en dos proyectos Vercel. Supabase conserva datos, adjuntos y notificaciones.
+en un proyecto Vercel con Services. Supabase conserva datos, adjuntos y notificaciones.
 En producción el almacenamiento local está deshabilitado. El formulario admite
 hasta cinco archivos con 4 MB en total.
 

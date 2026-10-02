@@ -244,9 +244,8 @@ export function CaseForm() {
         formData.append('files', file);
       });
 
-      // En producción se envía directamente al backend para conservar la IP del cliente.
-      const apiOrigin = (process.env.NEXT_PUBLIC_BACKEND_URL || '').replace(/\/$/, '');
-      const response = await fetch(`${apiOrigin}/api/cases`, {
+      // Services envía esta petición del mismo dominio directamente a Express.
+      const response = await fetch('/api/cases', {
         method: 'POST',
         body: formData,
       });

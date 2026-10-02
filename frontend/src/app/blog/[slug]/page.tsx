@@ -1,6 +1,6 @@
 import { COMPANY, getWhatsAppCustomUrl } from '@/content/company';
 import { parseAndSanitizeMarkdown } from '@/lib/markdown';
-import { getPostBySlug, getPublicPosts } from '@/lib/posts-store';
+import { getPostBySlug } from '@/lib/posts-store';
 import { ArrowLeft, Calendar, Clock, MessageCircle } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
@@ -11,13 +11,6 @@ interface BlogPostPageProps {
 }
 
 export const revalidate = 5;
-
-export async function generateStaticParams() {
-  const posts = await getPublicPosts();
-  return posts.map((post) => ({
-    slug: post.slug,
-  }));
-}
 
 export async function generateMetadata({ params }: BlogPostPageProps): Promise<Metadata> {
   const { slug } = await params;

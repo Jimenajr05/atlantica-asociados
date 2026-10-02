@@ -1,11 +1,22 @@
 import { BlogPost } from '@/types';
 
-const BACKEND_URL = process.env.BACKEND_URL || 'http://127.0.0.1:5000';
+import { connection } from 'next/server';
+
+async function backendUrl(path: string): Promise<URL> {
+  // Service bindings are unavailable during builds. Wait for a request.
+  await connection();
+  const base = process.env.BACKEND_URL;
+  if (!base && process.env.VERCEL === '1') {
+    throw new Error('Falta el binding BACKEND_URL del servicio backend.');
+  }
+  return new URL(path, base || 'http://127.0.0.1:5000');
+}
 
 // 2. Obtener artículos públicos para Blog y SEO
 export async function getPublicPosts(): Promise<BlogPost[]> {
+  const url = await backendUrl('/api/posts');
   try {
-    const res = await fetch(`${BACKEND_URL}/api/posts`, {
+    const res = await fetch(url, {
       next: { revalidate: 10 },
     });
     if (res.ok) {
@@ -23,8 +34,9 @@ export async function getPublicPosts(): Promise<BlogPost[]> {
 
 // 3. Obtener un artículo por su slug
 export async function getPostBySlug(slug: string): Promise<BlogPost | null> {
+  const url = await backendUrl(`/api/posts/${encodeURIComponent(slug)}`);
   try {
-    const res = await fetch(`${BACKEND_URL}/api/posts/${encodeURIComponent(slug)}`, {
+    const res = await fetch(url, {
       next: { revalidate: 10 },
     });
     if (res.ok) {
@@ -42,8 +54,9 @@ export async function getPostBySlug(slug: string): Promise<BlogPost | null> {
 
 // 4. Obtener un artículo por ID
 export async function getPostById(id: string): Promise<BlogPost | null> {
+  const url = await backendUrl(`/api/admin/posts/${encodeURIComponent(id)}`);
   try {
-    const res = await fetch(`${BACKEND_URL}/api/admin/posts/${encodeURIComponent(id)}`, {
+    const res = await fetch(url, {
       cache: 'no-store',
     });
     if (res.ok) {

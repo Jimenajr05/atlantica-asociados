@@ -1,37 +1,32 @@
-import assert from 'node:assert/strict';
+﻿import assert from 'node:assert/strict';
 import test from 'node:test';
+import { readFile } from 'node:fs/promises';
 
-test('Vercel requires matching HTTPS backend origins before building', async () => {
-  const names = ['VERCEL', 'BACKEND_URL', 'NEXT_PUBLIC_BACKEND_URL'];
-  const original = Object.fromEntries(names.map(name => [name, process.env[name]]));
-  let version = 0;
-  const load = () => import(`../next.config.mjs?deployment-test=${version++}`);
+test('Services builds without runtime bindings and leaves API routing to Vercel', async () => {
+  const original = process.env.VERCEL;
   try {
     process.env.VERCEL = '1';
-    delete process.env.BACKEND_URL;
-    delete process.env.NEXT_PUBLIC_BACKEND_URL;
-    await assert.rejects(load(), /BACKEND_URL/);
-    process.env.BACKEND_URL = 'https://atlantica-api.vercel.app';
-    await assert.rejects(load(), /NEXT_PUBLIC_BACKEND_URL/);
-    process.env.NEXT_PUBLIC_BACKEND_URL = 'http://localhost:5000';
-    await assert.rejects(load(), /HTTPS/);
-    process.env.NEXT_PUBLIC_BACKEND_URL = 'https://another-api.vercel.app';
-    await assert.rejects(load(), /mismo backend/);
-    process.env.NEXT_PUBLIC_BACKEND_URL = 'https://atlantica-api.vercel.app';
-    process.env.BACKEND_URL += '/';
-    const { default: config } = await load();
-    assert.deepEqual(await config.rewrites(), [{
-      source: '/api/:path*', destination: 'https://atlantica-api.vercel.app/api/:path*',
-    }]);
+    const { default: config } = await import('../next.config.mjs?services');
+    assert.deepEqual(await config.rewrites(), []);
     delete process.env.VERCEL;
-    delete process.env.BACKEND_URL;
-    delete process.env.NEXT_PUBLIC_BACKEND_URL;
-    const { default: localConfig } = await load();
-    assert.equal((await localConfig.rewrites())[0].destination, 'http://127.0.0.1:5000/api/:path*');
+    const { default: local } = await import('../next.config.mjs?local');
+    const routes = await local.rewrites();
+    assert.equal(routes[0].source, '/api/:path*');
+    assert.ok(routes[0].destination.endsWith('/api/:path*'));
   } finally {
-    for (const name of names) {
-      if (original[name] === undefined) delete process.env[name];
-      else process.env[name] = original[name];
-    }
+    if (original === undefined) delete process.env.VERCEL;
+    else process.env.VERCEL = original;
   }
+});
+
+test('project routes preserve API prefix and bind frontend to backend', async () => {
+  const config = JSON.parse(await readFile(new URL('../../vercel.json', import.meta.url)));
+  assert.deepEqual(config.services.frontend.bindings, [
+    { type: 'service', service: 'backend', format: 'url', env: 'BACKEND_URL' },
+  ]);
+  assert.deepEqual(config.rewrites, [
+    { source: '/api/(.*)', destination: { service: 'backend' } },
+    { source: '/(.*)', destination: { service: 'frontend' } },
+  ]);
+  assert.equal(config.crons[0].path, '/api/internal/notifications');
 });
