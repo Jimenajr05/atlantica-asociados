@@ -32,6 +32,8 @@ Se prepararon dos archivos locales ignorados por Git:
 estática. Si cambias valores, actualiza el archivo nuevo correspondiente.
 Supabase inyecta SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY automáticamente en
 sus funciones; no hay que copiarlos a la web ni configurarlos con la CLI.
+Configurar también NODE_ENV=production y ATLANTICA_EDGE=1 como secretos de la
+función. El entorno alojado no permite modificar variables durante el arranque.
 Las claves privadas que se hayan compartido deben revocarse antes de publicar.
 
 La web requiere NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY y

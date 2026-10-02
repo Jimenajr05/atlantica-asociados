@@ -24,14 +24,16 @@ interface RateLimitRecord {
 const ipRequestMap = new Map<string, RateLimitRecord>();
 
 // Periodic cleanup of stale entries
-setInterval(() => {
+const cleanupTimer = setInterval(() => {
   const now = Date.now();
   for (const [ip, record] of ipRequestMap.entries()) {
     if (now > record.resetTime) {
       ipRequestMap.delete(ip);
     }
   }
-}, 10 * 60 * 1000).unref();
+}, 10 * 60 * 1000);
+// Edge runtimes return a numeric timer; Node returns an object with unref.
+if (typeof cleanupTimer === 'object') cleanupTimer.unref?.();
 
 export function checkIpRateLimit(
   ip: string,

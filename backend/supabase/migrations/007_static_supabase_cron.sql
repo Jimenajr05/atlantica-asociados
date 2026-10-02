@@ -17,7 +17,7 @@ BEGIN
     RETURN;
   END IF;
   PERFORM net.http_get(
-    url := rtrim(project_url, '/') || '/functions/v1/atlantica-api/api/internal/notifications',
+    url := rtrim(project_url, '/') || '/functions/v1/atlantica-api/api/cron-notifications',
     headers := jsonb_build_object('Authorization', 'Bearer ' || cron_secret),
     timeout_milliseconds := 60000
   );

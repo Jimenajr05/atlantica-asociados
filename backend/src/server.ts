@@ -5,7 +5,7 @@ import path from 'path';
 import multer from 'multer';
 
 // Cargar variables de entorno (soporta .env y .env.local)
-if (process.env.SUPABASE_EDGE !== '1') {
+if (process.env.ATLANTICA_EDGE !== '1') {
   dotenv.config();
   dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
 }
@@ -18,11 +18,11 @@ import appointmentsRouter from './routes/appointments';
 import { startNotificationWorker, processNotificationQueue } from './services/appointment-notifications';
 import { createAdminClient } from './services/supabase-admin';
 import { usesCloudStorage } from './services/deployment';
-import { timingSafeEqual } from 'node:crypto';
+import { webcrypto } from 'node:crypto';
 
 const app = express();
 // The Edge gateway is the only upstream proxy of the hosted function.
-if (process.env.SUPABASE_EDGE === '1') app.set('trust proxy', 1);
+if (process.env.ATLANTICA_EDGE === '1') app.set('trust proxy', 1);
 // Configurar solo los proxies conocidos; no confiar directamente en cabeceras del cliente.
 if (process.env.TRUST_PROXY) app.set('trust proxy', process.env.TRUST_PROXY.split(',').map((value) => value.trim()));
 const PORT = process.env.PORT || 5000;
@@ -62,11 +62,18 @@ app.use((_req, res, next) => {
 });
 
 // Supabase Cron invoca este endpoint; la cola vive en Supabase.
-app.get('/api/internal/notifications', async (req, res, next) => {
+app.get(['/api/cron-notifications', '/api/internal/notifications'], async (req, res, next) => {
   const secret = process.env.CRON_SECRET;
-  const provided = Buffer.from(req.get('authorization') || '');
-  const expected = Buffer.from(`Bearer ${secret || ''}`);
-  if (!secret || provided.length !== expected.length || !timingSafeEqual(provided, expected)) {
+  const encoder = new TextEncoder();
+  const [provided, expected] = await Promise.all([
+    webcrypto.subtle.digest('SHA-256', encoder.encode(req.get('authorization') || '')),
+    webcrypto.subtle.digest('SHA-256', encoder.encode(`Bearer ${secret || ''}`)),
+  ]);
+  const providedBytes = new Uint8Array(provided);
+  const expectedBytes = new Uint8Array(expected);
+  let difference = 0;
+  for (let index = 0; index < expectedBytes.length; index++) difference |= providedBytes[index] ^ expectedBytes[index];
+  if (!secret || difference !== 0) {
     res.status(401).json({ error: 'No autorizado.' });
     return;
   }
@@ -107,7 +114,7 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   });
 });
 
-if (process.env.NODE_ENV !== 'test' && process.env.VERCEL !== '1' && process.env.SUPABASE_EDGE !== '1') {
+if (process.env.NODE_ENV !== 'test' && process.env.VERCEL !== '1' && process.env.ATLANTICA_EDGE !== '1') {
   startNotificationWorker();
   app.listen(PORT, () => {
     console.log(`🚀 [BACKEND] Servidor ejecutándose en http://localhost:${PORT}`);
