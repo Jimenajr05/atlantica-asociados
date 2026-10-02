@@ -34,7 +34,7 @@ export const COMPANY: CompanyInfo = {
   name: "ATLÁNTICA & ASOCIADOS",
   tagline: "Le ayudamos a dar el primer paso",
   motto: "Transformamos su inquietud en respuestas claras y gestiones efectivas.",
-  heroTitle: "¿Le violaron sus derechos y no sabe qué hacer?",
+  heroTitle: "¿Le violentaron sus derechos y no sabe qué hacer?",
   heroSubtitle: "Le ayudamos a dar el primer paso. Le escuchamos con empatía y le guiamos paso a paso ante instituciones públicas y privadas en Costa Rica.",
   description: "En ATLÁNTICA & ASOCIADOS le brindamos acompañamiento humano, cercano y riguroso. Entendemos lo abrumador que puede ser enfrentar trámites ante la CCSS, municipalidades u otras instituciones. Estamos aquí para orientarle en lenguaje sencillo y defender sus derechos.",
   purpose: "Nuestro propósito es hacer accesible la gestión institucional para cualquier ciudadano, comunidad u organización, guiándole con claridad desde la primera consulta hasta la resolución de su caso.",

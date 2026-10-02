@@ -65,7 +65,7 @@ export default async function HomePage() {
           {/* Título Principal de la landing */}
           <h1 className="text-[1.875rem] sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.08] sm:leading-[1.15] max-w-4xl mx-auto text-white">
             <span className="sm:hidden">Sus derechos merecen una respuesta.</span>
-            <span className="hidden sm:inline">¿Le violaron sus derechos y no sabe qué hacer?</span>
+            <span className="hidden sm:inline">¿Le violentaron sus derechos y no sabe qué hacer?</span>
             <span className="text-dorado block mt-3 text-2xl sm:text-5xl lg:text-6xl font-semibold sm:font-bold">
               Le ayudamos a dar el primer paso
             </span>

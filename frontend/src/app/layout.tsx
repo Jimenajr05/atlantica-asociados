@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     template: '%s | Atlántica & Asociados',
   },
   description:
-    '¿Le violaron sus derechos y no sabe qué hacer? Le ayudamos a redactar documentos y gestionar trámites ante la CCSS, municipalidades, ministerios y Sala Constitucional en Costa Rica.',
+    '¿Le violentaron sus derechos y no sabe qué hacer? Le ayudamos a redactar documentos y gestionar trámites ante la CCSS, municipalidades, ministerios y Sala Constitucional en Costa Rica.',
   keywords: [
     'asesoría en trámites Costa Rica',
     'redacción de documentos a instituciones',
@@ -54,7 +54,7 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'es_CR',
     url: siteUrl,
-    title: 'Atlántica & Asociados | ¿Le violaron sus derechos y no sabe qué hacer?',
+    title: 'Atlántica & Asociados | ¿Le violentaron sus derechos y no sabe qué hacer?',
     description:
       'Acompañamiento ciudadano y redacción técnica de documentos ante instituciones públicas en Costa Rica. 100% en línea y confidencial.',
     siteName: 'Atlántica & Asociados',
