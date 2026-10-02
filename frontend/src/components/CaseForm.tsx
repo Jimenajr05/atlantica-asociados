@@ -1,5 +1,7 @@
 'use client';
 
+import { apiFetch } from '@/lib/api-fetch';
+
 import { getWhatsAppCustomUrl } from '@/content/company';
 import { SERVICES } from '@/content/services';
 import {
@@ -68,7 +70,7 @@ function formatAppointmentTime(timeSlot: TimeSlot) {
 }
 
 async function fetchAppointmentAvailability(from: string, signal?: AbortSignal) {
-  const response = await fetch(
+  const response = await apiFetch(
     `/api/appointments/availability?from=${encodeURIComponent(from)}&days=42`,
     { signal }
   );
@@ -245,7 +247,7 @@ export function CaseForm() {
       });
 
       // Services envía esta petición del mismo dominio directamente a Express.
-      const response = await fetch('/api/cases', {
+      const response = await apiFetch('/api/cases', {
         method: 'POST',
         body: formData,
       });

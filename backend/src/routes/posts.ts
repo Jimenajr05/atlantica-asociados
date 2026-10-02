@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { getPublicPosts, getPostBySlug } from '../services/posts-store';
+import { renderPublicArticle } from '../services/blog-html';
 
 const router = Router();
 
@@ -24,7 +25,7 @@ router.get('/:slug', async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    res.json({ success: true, post });
+    res.json({ success: true, post, html: await renderPublicArticle(post.content) });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

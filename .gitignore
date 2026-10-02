@@ -39,6 +39,7 @@ backend/backups/
 .env.test.local
 .env.production.local
 .env.local
+supabase/functions/_shared/backend/
 
 # Vite cache
 .vite/

@@ -30,7 +30,7 @@ test('publication categories persist, validate and preserve legacy articles', as
     const write = (route: string, method: string, body: object) => fetch(url + route, {
       method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
     });
-    const base = { title: 'Test', content: '<p>Text</p>', excerpt: 'Summary', published: true };
+    const base = { title: 'Test', content: '<p><strong>Text</strong></p><script>alert(1)</script>', excerpt: 'Summary', published: true };
     const blogResponse = await write('/admin', 'POST', { ...base, slug: 'blog-test' });
     assert.equal(blogResponse.status, 200);
     assert.equal((await blogResponse.json()).post.category, 'blog');
@@ -38,6 +38,10 @@ test('publication categories persist, validate and preserve legacy articles', as
     const newsResponse = await write('/admin', 'POST', { ...base, slug: 'news-test', category: 'noticias' });
     const news = (await newsResponse.json()).post;
     assert.equal(news.category, 'noticias');
+    const publicArticle = await (await fetch(url + '/posts/news-test')).json();
+    assert.ok(publicArticle.html.includes('<strong>Text</strong>'));
+    assert.ok(!publicArticle.html.includes('<script'));
+    assert.ok(!publicArticle.html.includes('alert(1)'));
     const persisted = JSON.parse(fs.readFileSync('data/posts.json', 'utf8'));
     assert.equal(persisted.find((post: { slug: string }) => post.slug === 'news-test').category, 'noticias');
     const updated = await write(`/admin/${news.id}`, 'PUT', { ...base, slug: 'news-test', category: 'blog' });

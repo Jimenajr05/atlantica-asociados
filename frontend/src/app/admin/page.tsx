@@ -925,7 +925,7 @@ function AdminDashboardContent() {
                             <ExternalLink className="h-4 w-4" />
                           </Link>
                           <Link
-                            href={`/admin/blog/${post.id}/edit`}
+                            href={`/admin/blog/edit?id=${encodeURIComponent(post.id)}`}
                             className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-amber-50 hover:text-amber-700"
                             title="Editar"
                           >

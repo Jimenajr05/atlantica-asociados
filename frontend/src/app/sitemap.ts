@@ -1,3 +1,4 @@
+export const dynamic = 'force-static';
 import { getPublicPosts } from '@/lib/posts-store';
 import { MetadataRoute } from 'next';
 

@@ -1,0 +1,4 @@
+project_id = "atlantica-asociados"
+
+[functions.atlantica-api]
+verify_jwt = false

@@ -1,23 +1,23 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "services": {
-    "backend": {
-      "root": "backend",
-      "framework": "express"
-    },
-    "frontend": {
-      "root": "frontend",
-      "framework": "nextjs",
-      "bindings": [
-        { "type": "service", "service": "backend", "format": "url", "env": "BACKEND_URL" }
+  "framework": null,
+  "buildCommand": "npm ci --include=dev --prefix frontend && npm run build:static",
+  "outputDirectory": "frontend/out",
+  "rewrites": [
+    {
+      "source": "/blog/:slug",
+      "destination": "/blog/article/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/admin/:path*",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
       ]
     }
-  },
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": { "service": "backend" } },
-    { "source": "/(.*)", "destination": { "service": "frontend" } }
-  ],
-  "crons": [
-    { "path": "/api/internal/notifications", "schedule": "* * * * *" }
   ]
 }

@@ -5,13 +5,13 @@ import { adminFetch } from '@/lib/admin-fetch';
 import { PostCategory } from '@/types';
 import { AlertCircle, ArrowLeft, Loader2, Save } from 'lucide-react';
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
-import React, { useEffect, useState } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import React, { Suspense, useEffect, useState } from 'react';
 
-export default function EditBlogPostPage() {
+function EditBlogPostContent() {
   const router = useRouter();
-  const params = useParams<{ id: string }>();
-  const postId = params?.id || '';
+  const params = useSearchParams();
+  const postId = params?.get('id') || '';
 
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
@@ -187,4 +187,8 @@ export default function EditBlogPostPage() {
       </div>
     </div>
   );
+}
+
+export default function EditBlogPostPage() {
+  return <Suspense fallback={<p>Cargando art?culo?</p>}><EditBlogPostContent /></Suspense>;
 }

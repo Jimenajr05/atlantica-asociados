@@ -6,7 +6,7 @@ export function createClient() {
 
   // Si no hay configuración real o está en modo placeholder, crear cliente seguro
   if (!supabaseUrl || !supabaseAnonKey || supabaseUrl.includes('placeholder')) {
-    return createBrowserClient('https://mock.supabase.co', 'mock-anon-key');
+    throw new Error('Falta configurar la URL y la clave pública de Supabase.');
   }
 
   return createBrowserClient(supabaseUrl, supabaseAnonKey);

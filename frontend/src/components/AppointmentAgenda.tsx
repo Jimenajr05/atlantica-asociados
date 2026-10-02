@@ -1,5 +1,7 @@
 'use client';
 
+import { apiFetch } from '@/lib/api-fetch';
+
 import { adminFetch } from '@/lib/admin-fetch';
 import {
   APPOINTMENT_TIME_SLOTS,
@@ -175,7 +177,7 @@ export function AppointmentAgenda({ cases, initialDate = '', onAppointmentStatus
     setLoading(true);
     setErrorMessage(null);
 
-    fetch(`/api/appointments/availability?from=${firstDate}&days=42`, { signal: controller.signal })
+    apiFetch(`/api/appointments/availability?from=${firstDate}&days=42`, { signal: controller.signal })
       .then(async (response) => {
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || 'No se pudo cargar la agenda.');

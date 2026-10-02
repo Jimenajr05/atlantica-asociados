@@ -5,8 +5,10 @@ import path from 'path';
 import multer from 'multer';
 
 // Cargar variables de entorno (soporta .env y .env.local)
-dotenv.config();
-dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
+if (process.env.SUPABASE_EDGE !== '1') {
+  dotenv.config();
+  dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
+}
 
 import casesRouter from './routes/cases';
 import adminCasesRouter from './routes/admin-cases';
@@ -19,6 +21,8 @@ import { usesCloudStorage } from './services/deployment';
 import { timingSafeEqual } from 'node:crypto';
 
 const app = express();
+// The Edge gateway is the only upstream proxy of the hosted function.
+if (process.env.SUPABASE_EDGE === '1') app.set('trust proxy', 1);
 // Configurar solo los proxies conocidos; no confiar directamente en cabeceras del cliente.
 if (process.env.TRUST_PROXY) app.set('trust proxy', process.env.TRUST_PROXY.split(',').map((value) => value.trim()));
 const PORT = process.env.PORT || 5000;
@@ -29,7 +33,7 @@ const allowedOrigins = [
   process.env.NEXT_PUBLIC_SITE_URL,
   'http://localhost:3000',
   'http://127.0.0.1:3000',
-].filter(Boolean) as string[];
+].flatMap((value) => (value || '').split(',').map((origin) => origin.trim()).filter(Boolean));
 
 app.use(
   cors({
@@ -57,7 +61,7 @@ app.use((_req, res, next) => {
   next();
 });
 
-// Vercel Cron invoca este endpoint; la cola vive en Supabase.
+// Supabase Cron invoca este endpoint; la cola vive en Supabase.
 app.get('/api/internal/notifications', async (req, res, next) => {
   const secret = process.env.CRON_SECRET;
   const provided = Buffer.from(req.get('authorization') || '');
@@ -103,7 +107,7 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   });
 });
 
-if (process.env.NODE_ENV !== 'test' && process.env.VERCEL !== '1') {
+if (process.env.NODE_ENV !== 'test' && process.env.VERCEL !== '1' && process.env.SUPABASE_EDGE !== '1') {
   startNotificationWorker();
   app.listen(PORT, () => {
     console.log(`🚀 [BACKEND] Servidor ejecutándose en http://localhost:${PORT}`);

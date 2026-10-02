@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: atlantica-asociados
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm ci --include=dev && npm run build
+    staticPublishPath: out
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        sync: false
+      - key: NEXT_PUBLIC_SITE_URL
+        value: https://infoatlanticaasociados.com
+      - key: NEXT_PUBLIC_WHATSAPP_NUMBER
+        value: "50660024545"
+      - key: NEXT_PUBLIC_CONTACT_EMAIL
+        value: infoatlantica.asociados@gmail.com
+    routes:
+      - type: rewrite
+        source: /blog/*
+        destination: /blog/article/index.html
+    headers:
+      - path: /admin/*
+        name: X-Robots-Tag
+        value: noindex, nofollow

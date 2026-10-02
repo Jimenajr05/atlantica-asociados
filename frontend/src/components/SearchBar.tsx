@@ -1,9 +1,10 @@
 'use client';
 
+import { apiFetch } from '@/lib/api-fetch';
+
 import { FAQS } from '@/content/faqs';
 import { SERVICES } from '@/content/services';
 import { ArrowRight, Briefcase, FileText, HelpCircle, Search, X } from 'lucide-react';
-import Link from 'next/link';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 type ResultType = 'service' | 'faq' | 'blog';
@@ -83,7 +84,7 @@ export function SearchBar({ isOpen, onClose }: SearchBarProps) {
   useEffect(() => {
     if (!isOpen) return;
     const controller = new AbortController();
-    fetch('/api/posts', { signal: controller.signal })
+    apiFetch('/api/posts', { signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) throw new Error('No se pudieron consultar los artículos.');
         return response.json();
@@ -189,7 +190,7 @@ export function SearchBar({ isOpen, onClose }: SearchBarProps) {
                 <ul className="divide-y divide-slate-800/80">
                   {results.map((r) => (
                     <li key={r.id}>
-                      <Link
+                      <a
                         href={r.href}
                         onClick={onClose}
                         className="flex items-start gap-3 px-5 py-3 hover:bg-slate-800/50 transition-colors group"
@@ -209,7 +210,7 @@ export function SearchBar({ isOpen, onClose }: SearchBarProps) {
                           </p>
                         </div>
                         <ArrowRight className="w-4 h-4 text-slate-600 group-hover:text-dorado transition-colors flex-shrink-0 mt-1" />
-                      </Link>
+                      </a>
                     </li>
                   ))}
                 </ul>

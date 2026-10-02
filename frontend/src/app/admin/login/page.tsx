@@ -36,7 +36,9 @@ export default function AdminLoginPage() {
       });
 
       if (error) {
-        throw new Error('Credenciales inválidas o usuario no registrado.');
+        if (error.code === 'invalid_credentials') throw new Error('Correo o contraseña incorrectos.');
+        if (error.code === 'email_not_confirmed') throw new Error('Confirme el correo del usuario en Supabase antes de ingresar.');
+        throw new Error('No se pudo iniciar sesión. Revise la conexión y la configuración de Supabase.');
       }
 
       if (data.user) {
